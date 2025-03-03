@@ -48,3 +48,12 @@ cards.forEach(card => {
     cardElement.textContent = card;
     cardsList.appendChild(cardElement);
 });
+// Сохранение карточек
+     localStorage.setItem('userCards', JSON.stringify(userCards));
+
+     // Загрузка карточек
+     const savedCards = JSON.parse(localStorage.getItem('userCards'));
+     if (savedCards) {
+         userCards = savedCards;
+         updateCardsList();
+     }
