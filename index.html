@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Мини-приложение</title>
+    <!-- Подключаем Font Awesome для иконок -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f0f0f0;
+        }
+        .navbar {
+            display: flex;
+            justify-content: space-around;
+            background-color: #333;
+            padding: 20px 0; /* Увеличиваем высоту нижнего бара */
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+        }
+        .navbar button {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 24px; /* Увеличиваем размер иконок */
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .navbar button:hover {
+            color: #00a8ff;
+        }
+        .content {
+            padding: 20px;
+            text-align: center;
+        }
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="content" id="home">
+        <h1>Главная</h1>
+        <p>Добро пожаловать в мини-приложение! Выберите раздел внизу.</p>
+    </div>
+
+    <div class="content hidden" id="storage">
+        <h1>Хранилище</h1>
+        <p>Здесь будут отображаться ваши карточки.</p>
+        <div id="cards-list"></div>
+    </div>
+
+    <div class="content hidden" id="market">
+        <h1>Маркет</h1>
+        <p>Здесь можно приобрести новые карточки.</p>
+    </div>
+
+    <div class="content hidden" id="profile">
+        <h1>Профиль</h1>
+        <p>Информация о вашем профиле.</p>
+    </div>
+
+    <div class="navbar">
+        <button onclick="showSection('home')">
+            <i class="fas fa-home"></i> <!-- Иконка для Главной -->
+        </button>
+        <button onclick="showSection('storage')">
+            <i class="fas fa-box-open"></i> <!-- Иконка для Хранилища -->
+        </button>
+        <button onclick="showSection('market')">
+            <i class="fas fa-shopping-cart"></i> <!-- Иконка для Маркета -->
+        </button>
+        <button onclick="showSection('profile')">
+            <i class="fas fa-user"></i> <!-- Иконка для Профиля -->
+        </button>
+    </div>
+
+    <script>
+        // Функция для переключения разделов
+        function showSection(sectionId) {
+            // Скрываем все разделы
+            document.querySelectorAll('.content').forEach(div => {
+                div.classList.add('hidden');
+            });
+
+            // Показываем выбранный раздел
+            document.getElementById(sectionId).classList.remove('hidden');
+        }
+
+        // Пример данных для хранилища
+        const cards = ["🂡", "🂢", "🂣", "🂤", "🂥", "🂦", "🂧", "🂨", "🂩", "🂪"];
+        const cardsList = document.getElementById('cards-list');
+
+        // Добавляем карточки в хранилище
+        cards.forEach(card => {
+            const cardElement = document.createElement('div');
+            cardElement.className = 'card';
+            cardElement.textContent = card;
+            cardsList.appendChild(cardElement);
+        });
+    </script>
+</body>
+</html>
