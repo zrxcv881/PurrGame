@@ -1,3 +1,4 @@
+import { Analytics } from "@vercel/analytics/react"
 // Variables
 let userCards = [];
 let tokens = 0;
