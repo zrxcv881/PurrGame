@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mini App</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Token Display -->
+    <div class="token-display">
+        <span id="token-count">0</span> Purr
+    </div>
+
+    <!-- Home Section -->
+    <div class="content active" id="home">
+        <h1 class="home-title">Home</h1>
+        <p class="welcome-text">Welcome! Start mining or explore other sections.</p>
+        <button id="get-card-button" class="get-card-button" onclick="getWelcomeCard()">Get Welcome Card</button>
+
+        <!-- Mining Section -->
+        <div class="mining-container">
+            <div id="mining-button" class="mining-button" onclick="startMining()">
+                <span id="mining-text">Mining</span>
+                <span id="mining-timer" class="hidden"></span> <!-- Timer -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Storage Section -->
+    <div class="content hidden" id="storage">
+        <h1>Storage</h1>
+        <p>Your cards will be displayed here.</p>
+        <div class="cards-container" id="cards-container">
+            <!-- Cards will be added here -->
+        </div>
+    </div>
+
+    <!-- Market Section -->
+    <div class="content hidden" id="market">
+        <h1>Market</h1>
+        <p>Here you can buy boxes with random cards.</p>
+        <div class="boxes-container" id="boxes-container">
+            <!-- Box for 100 Purr -->
+            <div class="box" onclick="buyBox(100)">
+                🎁<br>
+                <span>100 Purr</span>
+            </div>
+            <!-- Box for 500 Purr -->
+            <div class="box" onclick="buyBox(500)">
+                🎁<br>
+                <span>500 Purr</span>
+            </div>
+            <!-- Box for 1000 Purr -->
+            <div class="box" onclick="buyBox(1000)">
+                🎁<br>
+                <span>1000 Purr</span>
+            </div>
+            <!-- Box for 50 Telegram Stars -->
+            <div class="box" onclick="buyBoxWithStars(50)">
+                🎁<br>
+                <span>50 Telegram Stars</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Exchange Section -->
+    <div class="content hidden" id="exchange">
+        <h1>Exchange</h1>
+        <p>Here you can buy or sell cards with other users.</p>
+
+        <!-- Button to open the sell card modal -->
+        <button class="sell-card-button" onclick="openSellCardModal()">Sell Card</button>
+
+        <!-- Market Listings -->
+        <div class="market-listings">
+            <h2>Cards for Sale</h2>
+            <div id="market-listings-container">
+                <!-- Cards for sale will be added here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Profile Section -->
+    <div class="content hidden" id="profile">
+        <h1>Profile</h1>
+        <p>Your profile information.</p>
+    </div>
+
+    <!-- Navbar -->
+    <div class="navbar">
+        <button onclick="showSection('home')">
+            <i class="fas fa-home"></i>
+            <span>Home</span>
+        </button>
+        <button onclick="showSection('storage')">
+            <i class="fas fa-box-open"></i>
+            <span>Storage</span>
+        </button>
+        <button onclick="showSection('market')">
+            <i class="fas fa-shopping-cart"></i>
+            <span>Market</span>
+        </button>
+        <button onclick="showSection('exchange')">
+            <i class="fas fa-exchange-alt"></i>
+            <span>Exchange</span>
+        </button>
+        <button onclick="showSection('profile')">
+            <i class="fas fa-user"></i>
+            <span>Profile</span>
+        </button>
+    </div>
+
+    <!-- Modal for New Card -->
+    <div id="card-modal" class="modal hidden">
+        <div class="modal-content">
+            <h2>Congratulations!</h2>
+            <p>You've received a new card!</p>
+            <div class="card-modal-card">
+                🎉
+            </div>
+            <button onclick="closeModal()">Close</button>
+        </div>
+    </div>
+
+    <!-- Modal for Not Enough Purr -->
+    <div id="purr-modal" class="modal hidden">
+        <div class="modal-content">
+            <h2>Oops!</h2>
+            <p>You don't have enough Purr to buy this box.</p>
+            <button onclick="closePurrModal()">Close</button>
+        </div>
+    </div>
+
+    <!-- Modal for Selling Card -->
+    <div id="sell-card-modal" class="modal hidden">
+        <div class="modal-content">
+            <h2>Sell Your Card</h2>
+            <div class="cards-to-sell" id="cards-to-sell">
+                <!-- Cards will be added here -->
+            </div>
+            <input type="number" id="card-price" placeholder="Enter price in Purr" min="1">
+            <button onclick="sellCard()">Sell Card</button>
+            <button onclick="closeSellCardModal()">Close</button>
+            <!-- Кнопка отмены продажи -->
+            <button id="cancel-sale-button" class="hidden" onclick="cancelSale()">Cancel Sale</button>
+        </div>
+    </div>
+
+    <!-- Modal for Purchase Confirmation -->
+    <div id="purchase-confirm-modal" class="modal hidden">
+        <div class="modal-content">
+            <h2>Confirm Purchase</h2>
+            <p>Are you sure you want to buy this card for <span id="confirm-price"></span> Purr?</p>
+            <div class="confirm-card">
+                <!-- Card content will be added here -->
+            </div>
+            <button onclick="confirmPurchase()">Yes, Buy</button>
+            <button onclick="closePurchaseConfirmModal()">Cancel</button>
+        </div>
+    </div>
+
+    <!-- Modal for Notifications -->
+    <div id="notification-modal" class="modal hidden">
+        <div class="modal-content">
+            <h2 id="notification-title"></h2>
+            <p id="notification-message"></p>
+            <button onclick="closeNotificationModal()">Close</button>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
