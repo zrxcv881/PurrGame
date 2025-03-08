@@ -414,7 +414,7 @@ function closeSellCardModal() {
 async function saveProgress(chatId) {
     const progress = { tokens, cards: userCards };
     try {
-        const response = await fetch('http://localhost:3000/save-progress', {
+        const response = await fetch(' https://purrplay-3mftwg6p9-zrxcv881s-projects.vercel.app/save-progress', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ chatId, progress }),
@@ -433,7 +433,7 @@ async function saveProgress(chatId) {
 // Загрузить прогресс с сервера
 async function loadProgress(chatId) {
     try {
-        const response = await fetch(`http://localhost:3000/load-progress?chatId=${chatId}`);
+        const response = await fetch(` https://purrplay-3mftwg6p9-zrxcv881s-projects.vercel.app/load-progress?chatId=${chatId}`);
         if (!response.ok) {
             throw new Error('Failed to load progress');
         }
