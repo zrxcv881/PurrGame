@@ -463,10 +463,12 @@ function openSellCardModal() {
     updateCardsToSell();
     const modal = document.getElementById('sell-card-modal');
     modal.classList.remove('hidden');
+    modal.scrollTop = 0; // Сбрасываем прокрутку в начало
 }
 
 // Function to close the sell card modal
 function closeSellCardModal() {
     const modal = document.getElementById('sell-card-modal');
     modal.classList.add('hidden');
-}
+                                                        }
+        
