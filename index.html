@@ -41,27 +41,46 @@
     <!-- Market Section -->
     <div class="content hidden" id="market">
         <h1>Market</h1>
-        <p>Here you can buy boxes with random cards.</p>
-        <div class="boxes-container" id="boxes-container">
-            <!-- Box for 100 Purr -->
-            <div class="box" onclick="buyBox(100)">
-                🎁<br>
-                <span>100 Purr</span>
+        <p>Here you can buy boxes or upgrade your mining efficiency.</p>
+
+        <!-- Toggle Buttons -->
+        <div class="market-toggle">
+            <button id="toggle-boxes" class="toggle-button active" onclick="showMarketSection('boxes')">Boxes</button>
+            <button id="toggle-upgrades" class="toggle-button" onclick="showMarketSection('upgrades')">Upgrades</button>
+        </div>
+
+        <!-- Boxes Section -->
+        <div class="market-section active" id="boxes-section">
+            <div class="boxes-container" id="boxes-container">
+                <!-- Box for 100 Purr -->
+                <div class="box" onclick="buyBox(100)">
+                    🎁<br>
+                    <span>100 Purr</span>
+                </div>
+                <!-- Box for 500 Purr -->
+                <div class="box" onclick="buyBox(500)">
+                    🎁<br>
+                    <span>500 Purr</span>
+                </div>
+                <!-- Box for 1000 Purr -->
+                <div class="box" onclick="buyBox(1000)">
+                    🎁<br>
+                    <span>1000 Purr</span>
+                </div>
+                <!-- Box for 50 Telegram Stars -->
+                <div class="box" onclick="buyBoxWithStars(50)">
+                    🎁<br>
+                    <span>50 Telegram Stars</span>
+                </div>
             </div>
-            <!-- Box for 500 Purr -->
-            <div class="box" onclick="buyBox(500)">
-                🎁<br>
-                <span>500 Purr</span>
-            </div>
-            <!-- Box for 1000 Purr -->
-            <div class="box" onclick="buyBox(1000)">
-                🎁<br>
-                <span>1000 Purr</span>
-            </div>
-            <!-- Box for 50 Telegram Stars -->
-            <div class="box" onclick="buyBoxWithStars(50)">
-                🎁<br>
-                <span>50 Telegram Stars</span>
+        </div>
+
+        <!-- Upgrades Section -->
+        <div class="market-section hidden" id="upgrades-section">
+            <div class="upgrades-container">
+                <button id="upgrade-button" class="upgrade-button" onclick="purchaseUpgrade()">
+                    Upgrade Mining (Level 1): +10% (1000 Purr)
+                </button>
             </div>
         </div>
     </div>
