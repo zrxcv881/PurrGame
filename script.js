@@ -320,7 +320,7 @@ function sellCard() {
     const cardToSell = userCards[selectedCardIndex];
     userCards.splice(selectedCardIndex, 1);
 
-    marketListings.push({ card: cardToSell, price: price, owner: "user" });
+    marketListings.unshift({ card: cardToSell, price: price, owner: "user" });
 
     updateCardsToSell();
     updateMarketListings();
