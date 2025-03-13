@@ -6,7 +6,6 @@ let miningEndTime = 0;
 let marketListings = [];
 let selectedCardIndex = null;
 let currentPurchaseIndex = null;
-// Variables for statistics
 let totalMinedPurr = 0; // Всего намайнено Purr
 let totalSpentPurr = 0; // Всего потрачено Purr
 let totalOpenedBoxes = 0; // Всего открыто боксов
@@ -27,6 +26,20 @@ const miningText = document.getElementById('mining-text');
 const miningTimer = document.getElementById('mining-timer');
 const getCardButton = document.getElementById('get-card-button');
 const marketListingsContainer = document.getElementById('market-listings-container');
+
+// Инициализация Telegram Web App
+if (window.Telegram && window.Telegram.WebApp) {
+    Telegram.WebApp.ready();
+    Telegram.WebApp.expand();
+
+    const user = Telegram.WebApp.initDataUnsafe.user;
+    if (user) {
+        const welcomeMessage = `Welcome, ${user.first_name || "User"}!`;
+        document.getElementById('welcome-text').textContent = welcomeMessage;
+    }
+} else {
+    console.error("Telegram Web App SDK не загружен!");
+}
 
 // Function to switch sections
 function showSection(sectionId) {
@@ -142,6 +155,7 @@ function updateCardsList() {
         cardsContainer.appendChild(cardElement);
     });
 }
+
 // Function to show the modal
 function showModal() {
     const modal = document.getElementById('card-modal');
@@ -265,9 +279,10 @@ function buyBox(cost) {
         showPurrModal();
     }
 }
+
 // Function to buy a box with Telegram Stars (stub)
 function buyBoxWithStars(stars) {
-    alert(`This feature is not implemented yet. You need ${stars} Telegram Stars to buy this box.`);
+    Telegram.WebApp.showAlert(`This feature is not implemented yet. You need ${stars} Telegram Stars to buy this box.`);
 }
 
 // Function to get a random card
@@ -321,6 +336,7 @@ function updateCardsToSell() {
         cardsToSellContainer.appendChild(cardElement);
     });
 }
+
 // Function to sell a card
 function sellCard() {
     if (selectedCardIndex === null) {
@@ -460,13 +476,11 @@ function buyMarketCard(index) {
 
 // Function to show notifications
 function showNotification(title, message) {
-    const notificationModal = document.getElementById('notification-modal');
-    const notificationTitle = document.getElementById('notification-title');
-    const notificationMessage = document.getElementById('notification-message');
-
-    notificationTitle.textContent = title;
-    notificationMessage.textContent = message;
-    notificationModal.classList.remove('hidden');
+    if (window.Telegram && window.Telegram.WebApp) {
+        Telegram.WebApp.showAlert(`${title}: ${message}`);
+    } else {
+        alert(`${title}: ${message}`);
+    }
 }
 
 // Function to close the notification modal
@@ -489,6 +503,7 @@ function closeSellCardModal() {
     const modal = document.getElementById('sell-card-modal');
     modal.classList.add('hidden');
 }
+
 let selectedCard = null;
 
 // Функция для выбора карточки
@@ -543,29 +558,12 @@ function sellSelectedCard(event) {
     selectedCard = null;
 }
 
-// Функция для открытия модального окна продажи карточки
-function openSellCardModal() {
-    updateCardsToSell(); // Обновляем список карточек для продажи
-
-    // Выбираем карточку, с которой перешли в Market
-    if (selectedCardForSale) {
-        const cardsToSell = document.querySelectorAll('.card-to-sell');
-        cardsToSell.forEach((card, index) => {
-            if (card.textContent === selectedCardForSale.querySelector('.card-content').textContent) {
-                card.classList.add('selected');
-                selectedCardIndex = index; // Запоминаем индекс выбранной карточки
-            }
-        });
-    }
-
-    const modal = document.getElementById('sell-card-modal');
-    modal.classList.remove('hidden');
-}
-// Function to confirm the price and hide the keyboard
+// Функция для подтверждения цены и скрытия клавиатуры
 function confirmPrice() {
     const priceInput = document.getElementById('card-price');
     priceInput.blur(); // Скрываем клавиатуру
 }
+
 // Функция для подтверждения цены
 function confirmPrice() {
     const priceInput = document.getElementById('card-price');
@@ -596,4 +594,28 @@ function editPrice() {
     confirmButton.classList.remove('hidden');
     editButton.classList.add('hidden');
 
-    // Фокусируемся на поле ввода, чт
+    // Фокусируемся на поле ввода, чтобы появилась клавиатура
+    priceInput.focus();
+}
+
+function updateProfileStatistics() {
+    const profileSection = document.getElementById('profile');
+    profileSection.innerHTML = `
+        <h1>Profile</h1>
+        <div class="statistics">
+            <p>Total Mined Purr: ${totalMinedPurr}</p>
+            <p>Total Spent Purr: ${totalSpentPurr}</p>
+            <p>Total Opened Boxes: ${totalOpenedBoxes}</p>
+        </div>
+    `;
+}
+
+// Инициализация приложения
+if (window.Telegram && window.Telegram.WebApp) {
+    const user = window.Telegram.WebApp.initDataUnsafe.user;
+
+    if (user) {
+        const welcomeMessage = `Welcome, ${user.first_name || "User"}!`;
+        document.getElementById('welcome-text').textContent = welcomeMessage;
+    }
+}
