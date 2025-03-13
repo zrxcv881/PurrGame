@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Mini App</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
@@ -194,6 +194,60 @@
             <h2 id="notification-title"></h2>
             <p id="notification-message"></p>
             <button onclick="closeNotificationModal()">Close</button>
+        </div>
+    </div>
+
+    <!-- Modal for Not Enough Purr for Mining Upgrade -->
+    <div id="not-enough-purr-modal" class="modal hidden">
+        <div class="modal-content">
+            <h2>Oops!</h2>
+            <p>You don't have enough Purr to upgrade mining.</p>
+            <button onclick="closeNotEnoughPurrModal()">Close</button>
+        </div>
+    </div>
+
+    <!-- Modal for Successful Listing -->
+    <div id="success-listing-modal" class="modal hidden">
+        <div class="modal-content">
+            <h2>Success!</h2>
+            <p>Your card has been successfully listed for sale.</p>
+            <button onclick="closeSuccessListingModal()">Close</button>
+        </div>
+    </div>
+
+    <!-- Modal for Canceling Sale -->
+    <div id="cancel-sale-modal" class="modal hidden">
+        <div class="modal-content">
+            <h2>Success!</h2>
+            <p>Your card has been successfully removed from the market.</p>
+            <button onclick="closeCancelSaleModal()">Close</button>
+        </div>
+    </div>
+
+    <!-- Modal for Successful Purchase -->
+    <div id="success-purchase-modal" class="modal hidden">
+        <div class="modal-content">
+            <h2>Success!</h2>
+            <p>You have successfully purchased the card.</p>
+            <button onclick="closeSuccessPurchaseModal()">Close</button>
+        </div>
+    </div>
+
+    <!-- Modal for No Card Selected -->
+    <div id="no-card-selected-modal" class="modal hidden">
+        <div class="modal-content">
+            <h2>Oops!</h2>
+            <p>Please select a card to sell.</p>
+            <button onclick="closeNoCardSelectedModal()">Close</button>
+        </div>
+    </div>
+
+    <!-- Modal for Invalid Price -->
+    <div id="invalid-price-modal" class="modal hidden">
+        <div class="modal-content">
+            <h2>Oops!</h2>
+            <p>Please enter a valid price (minimum 1 Purr).</p>
+            <button onclick="closeInvalidPriceModal()">Close</button>
         </div>
     </div>
 
