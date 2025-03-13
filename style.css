@@ -255,6 +255,9 @@ body, html {
     width: 100%;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     color: white;
+    max-height: 80vh; /* Ограничиваем высоту модального окна */
+    overflow-y: auto;  /* Добавляем вертикальную прокрутку */
+    position: relative; /* Для позиционирования кнопки закрытия */
 }
 
 .modal-content h2 {
@@ -286,6 +289,9 @@ body, html {
     font-family: 'Press Start 2P', cursive;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
     margin-top: 10px;
+    position: sticky; /* Фиксируем кнопку внизу */
+    bottom: 0; /* Прижимаем кнопку к нижней части модального окна */
+    width: 100%; /* Растягиваем кнопку на всю ширину */
 }
 
 .modal-content button:hover {
@@ -350,6 +356,8 @@ body, html {
     gap: 10px;
     margin: 20px 0;
     justify-content: center;
+    max-height: 300px; /* Ограничиваем высоту контейнера */
+    overflow-y: auto;  /* Добавляем вертикальную прокрутку */
 }
 
 #sell-card-modal .card-to-sell {
@@ -438,6 +446,8 @@ body, html {
     max-width: 800px;
     margin: 0 auto;
     margin-top: 20px;
+    max-height: 400px; /* Ограничиваем высоту контейнера */
+    overflow-y: auto;  /* Добавляем вертикальную прокрутку */
 }
 
 .card {
@@ -683,5 +693,4 @@ body, html {
         transform: scale(1);
         opacity: 1;
     }
-    }
-        
+}
