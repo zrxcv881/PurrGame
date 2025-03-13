@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
 </head>
 <body>
     <!-- Token Display -->
@@ -15,26 +16,26 @@
     </div>
 
     <!-- Home Section -->
-<div class="content active" id="home">
-    <h1 class="home-title">Home</h1>
-    <p id="welcome-text" class="welcome-text">Welcome! Start mining or explore other sections.</p> <!-- Элемент для приветствия -->
-    <button id="get-card-button" class="get-card-button" onclick="getWelcomeCard()">Get Welcome Card</button>
+    <div class="content active" id="home">
+        <h1 class="home-title">Home</h1>
+        <p id="welcome-text" class="welcome-text">Welcome! Start mining or explore other sections.</p>
+        <button id="get-card-button" class="get-card-button">Get Welcome Card</button>
 
-    <!-- Mining Section -->
-    <div class="mining-container">
-        <div id="mining-button" class="mining-button" onclick="startMining()">
-            <span id="mining-text">Mining</span>
-            <span id="mining-timer" class="hidden"></span> <!-- Timer -->
+        <!-- Mining Section -->
+        <div class="mining-container">
+            <div id="mining-button" class="mining-button">
+                <span id="mining-text">Mining</span>
+                <span id="mining-timer" class="hidden"></span> <!-- Timer -->
+            </div>
         </div>
     </div>
-</div>
 
     <!-- Storage Section -->
     <div class="content hidden" id="storage">
         <h1>Storage</h1>
         <p>Your cards will be displayed here.</p>
         <div class="cards-container" id="cards-container">
-            </div>
+            <!-- Карточки будут добавляться сюда -->
         </div>
     </div>
 
@@ -45,8 +46,8 @@
 
         <!-- Toggle Buttons -->
         <div class="market-toggle">
-            <button id="toggle-boxes" class="toggle-button active" onclick="showMarketSection('boxes')">Boxes</button>
-            <button id="toggle-upgrades" class="toggle-button" onclick="showMarketSection('upgrades')">Upgrades</button>
+            <button id="toggle-boxes" class="toggle-button active">Boxes</button>
+            <button id="toggle-upgrades" class="toggle-button">Upgrades</button>
         </div>
 
         <!-- Boxes Section -->
@@ -78,9 +79,7 @@
         <!-- Upgrades Section -->
         <div class="market-section hidden" id="upgrades-section">
             <div class="upgrades-container">
-                <button id="upgrade-button" class="upgrade-button" onclick="purchaseUpgrade()">
-                    Upgrade Mining (Level 1): +10% (1000 Purr)
-                </button>
+                <button id="upgrade-button" class="upgrade-button" onclick="purchaseUpgrade()">Upgrade Mining (Level 1): +10% (1000 Purr)</button>
             </div>
         </div>
     </div>
@@ -103,33 +102,34 @@
     </div>
 
     <!-- Profile Section -->
-<div class="content hidden" id="profile">
-    <h1>Profile</h1>
-    <div class="statistics">
-        <p>Total Mined Purr: 0</p>
-        <p>Total Spent Purr: 0</p>
-        <p>Total Opened Boxes: 0</p>
+    <div class="content hidden" id="profile">
+        <h1>Profile</h1>
+        <div class="statistics">
+            <p>Total Mined Purr: <span id="total-mined">0</span></p>
+            <p>Total Spent Purr: <span id="total-spent">0</span></p>
+            <p>Total Opened Boxes: <span id="total-boxes">0</span></p>
+        </div>
     </div>
-</div>
+
     <!-- Navbar -->
     <div class="navbar">
-        <button onclick="showSection('home')">
+        <button id="home-button" onclick="showSection('home')">
             <i class="fas fa-home"></i>
             <span>Home</span>
         </button>
-        <button onclick="showSection('storage')">
+        <button id="storage-button" onclick="showSection('storage')">
             <i class="fas fa-box-open"></i>
             <span>Storage</span>
         </button>
-        <button onclick="showSection('market')">
+        <button id="market-button" onclick="showSection('market')">
             <i class="fas fa-shopping-cart"></i>
             <span>Market</span>
         </button>
-        <button onclick="showSection('exchange')">
+        <button id="exchange-button" onclick="showSection('exchange')">
             <i class="fas fa-exchange-alt"></i>
             <span>Exchange</span>
         </button>
-        <button onclick="showSection('profile')">
+        <button id="profile-button" onclick="showSection('profile')">
             <i class="fas fa-user"></i>
             <span>Profile</span>
         </button>
@@ -156,24 +156,25 @@
         </div>
     </div>
 
-  <!-- Modal for Selling Card -->
-<div id="sell-card-modal" class="modal hidden">
-    <div class="modal-content">
-        <h2>Sell Your Card</h2>
-        <div class="cards-to-sell" id="cards-to-sell">
-            <!-- Cards will be added here -->
+    <!-- Modal for Selling Card -->
+    <div id="sell-card-modal" class="modal hidden">
+        <div class="modal-content">
+            <h2>Sell Your Card</h2>
+            <div class="cards-to-sell" id="cards-to-sell">
+                <!-- Cards will be added here -->
+            </div>
+            <div class="price-input-container">
+                <input type="number" id="card-price" placeholder="Enter price in Purr" min="1">
+                <button id="confirm-price-button" onclick="confirmPrice()">✓</button>
+                <button id="edit-price-button" class="hidden" onclick="editPrice()">✎</button>
+            </div>
+            <button onclick="sellCard()">Sell Card</button>
+            <button onclick="closeSellCardModal()">Close</button>
+            <!-- Кнопка отмены продажи -->
+            <button id="cancel-sale-button" class="hidden" onclick="cancelSale()">Cancel Sale</button>
         </div>
-        <div class="price-input-container">
-            <input type="number" id="card-price" placeholder="Enter price in Purr" min="1">
-            <button id="confirm-price-button" onclick="confirmPrice()">✓</button>
-            <button id="edit-price-button" class="hidden" onclick="editPrice()">✎</button>
-        </div>
-        <button onclick="sellCard()">Sell Card</button>
-        <button onclick="closeSellCardModal()">Close</button>
-        <!-- Кнопка отмены продажи -->
-        <button id="cancel-sale-button" class="hidden" onclick="cancelSale()">Cancel Sale</button>
     </div>
-</div>
+
     <!-- Modal for Purchase Confirmation -->
     <div id="purchase-confirm-modal" class="modal hidden">
         <div class="modal-content">
@@ -196,6 +197,7 @@
         </div>
     </div>
 
+    <!-- Подключение внешнего JavaScript-файла -->
     <script src="script.js"></script>
 </body>
 </html>
