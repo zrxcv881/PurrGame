@@ -6,9 +6,9 @@ let miningEndTime = 0;
 let marketListings = [];
 let selectedCardIndex = null;
 let currentPurchaseIndex = null;
-let totalMinedPurr = 0; // Всего намайнено Purr
-let totalSpentPurr = 0; // Всего потрачено Purr
-let totalOpenedBoxes = 0; // Всего открыто боксов
+let totalMinedPurr = 0;
+let totalSpentPurr = 0;
+let totalOpenedBoxes = 0;
 
 // Mining upgrades
 let miningUpgrades = [
@@ -30,7 +30,7 @@ const marketListingsContainer = document.getElementById('market-listings-contain
 // Инициализация Telegram Web App
 if (window.Telegram && window.Telegram.WebApp) {
     Telegram.WebApp.ready();
-    Telegram.WebApp.expand();
+    Telegram.WebApp.expand(); // Открываем в полноэкранном режиме
 
     const user = Telegram.WebApp.initDataUnsafe.user;
     if (user) {
@@ -112,7 +112,7 @@ function purchaseUpgrade() {
 
     const currentUpgrade = miningUpgrades[currentUpgradeIndex];
     if (tokens < currentUpgrade.cost) {
-        showNotification("Error", "Not enough Purr to purchase this upgrade.");
+        showNotEnoughPurrModal(); // Показываем модальное окно о недостатке Purr
         return;
     }
 
@@ -177,6 +177,78 @@ function showPurrModal() {
 // Function to close the "Not Enough Purr" modal
 function closePurrModal() {
     const modal = document.getElementById('purr-modal');
+    modal.classList.add('hidden');
+}
+
+// Function to show the "Not Enough Purr for Mining Upgrade" modal
+function showNotEnoughPurrModal() {
+    const modal = document.getElementById('not-enough-purr-modal');
+    modal.classList.remove('hidden');
+}
+
+// Function to close the "Not Enough Purr for Mining Upgrade" modal
+function closeNotEnoughPurrModal() {
+    const modal = document.getElementById('not-enough-purr-modal');
+    modal.classList.add('hidden');
+}
+
+// Function to show the "Successful Listing" modal
+function showSuccessListingModal() {
+    const modal = document.getElementById('success-listing-modal');
+    modal.classList.remove('hidden');
+}
+
+// Function to close the "Successful Listing" modal
+function closeSuccessListingModal() {
+    const modal = document.getElementById('success-listing-modal');
+    modal.classList.add('hidden');
+}
+
+// Function to show the "Cancel Sale" modal
+function showCancelSaleModal() {
+    const modal = document.getElementById('cancel-sale-modal');
+    modal.classList.remove('hidden');
+}
+
+// Function to close the "Cancel Sale" modal
+function closeCancelSaleModal() {
+    const modal = document.getElementById('cancel-sale-modal');
+    modal.classList.add('hidden');
+}
+
+// Function to show the "Successful Purchase" modal
+function showSuccessPurchaseModal() {
+    const modal = document.getElementById('success-purchase-modal');
+    modal.classList.remove('hidden');
+}
+
+// Function to close the "Successful Purchase" modal
+function closeSuccessPurchaseModal() {
+    const modal = document.getElementById('success-purchase-modal');
+    modal.classList.add('hidden');
+}
+
+// Function to show the "No Card Selected" modal
+function showNoCardSelectedModal() {
+    const modal = document.getElementById('no-card-selected-modal');
+    modal.classList.remove('hidden');
+}
+
+// Function to close the "No Card Selected" modal
+function closeNoCardSelectedModal() {
+    const modal = document.getElementById('no-card-selected-modal');
+    modal.classList.add('hidden');
+}
+
+// Function to show the "Invalid Price" modal
+function showInvalidPriceModal() {
+    const modal = document.getElementById('invalid-price-modal');
+    modal.classList.remove('hidden');
+}
+
+// Function to close the "Invalid Price" modal
+function closeInvalidPriceModal() {
+    const modal = document.getElementById('invalid-price-modal');
     modal.classList.add('hidden');
 }
 
@@ -340,27 +412,27 @@ function updateCardsToSell() {
 // Function to sell a card
 function sellCard() {
     if (selectedCardIndex === null) {
-        showNotification("Error", "Please select a card to sell.");
+        showNoCardSelectedModal(); // Показываем модальное окно, если карточка не выбрана
         return;
     }
 
     const price = parseInt(document.getElementById('card-price').value);
-    if (isNaN(price) || price < 1) {
-        showNotification("Error", "Please enter a valid price.");
+    if (isNaN(price) || price < 1 || !Number.isInteger(price)) {
+        showInvalidPriceModal(); // Показываем модальное окно, если цена некорректна
         return;
     }
 
     const cardToSell = userCards[selectedCardIndex];
     userCards.splice(selectedCardIndex, 1);
 
-    // Добавляем новое объявление в начало массива
-    marketListings.unshift({ card: cardToSell, price: price, owner: "user" });
+    const sellerUsername = Telegram.WebApp.initDataUnsafe.user?.username || "Anonymous";
+    marketListings.unshift({ card: cardToSell, price: price, owner: "user", sellerUsername: sellerUsername });
 
     updateCardsToSell();
     updateMarketListings();
     updateCardsList();
 
-    showNotification("Success", "Card listed for sale!");
+    showSuccessListingModal(); // Показываем модальное окно об успешном выставлении
     closeSellCardModal();
 }
 
@@ -390,12 +462,15 @@ function cancelSale(listingIndex) {
     updateCardsList(); // Обновляем инвентарь пользователя
     updateCardsToSell(); // Обновляем список карточек для продажи
 
-    showNotification("Success", "Sale canceled successfully!");
+    showCancelSaleModal(); // Показываем модальное окно об успешном снятии
 }
 
 // Function to update the market listings
 function updateMarketListings() {
     marketListingsContainer.innerHTML = ""; // Очищаем контейнер
+
+    // Сортируем объявления по цене (от меньшей к большей)
+    marketListings.sort((a, b) => a.price - b.price);
 
     marketListings.forEach((listing, index) => {
         const listingElement = document.createElement('div');
@@ -405,6 +480,7 @@ function updateMarketListings() {
         listingElement.innerHTML = `
             <div class="card-content">${listing.card.content}</div>
             <div class="card-price">${listing.price} Purr</div>
+            <div class="seller-username">Seller: @${listing.sellerUsername}</div>
             <button onclick="openPurchaseConfirmModal(${index})">Buy</button>
         `;
 
@@ -471,7 +547,7 @@ function buyMarketCard(index) {
 
     updateMarketListings();
     updateCardsList();
-    showNotification("Success", "Card purchased successfully!");
+    showSuccessPurchaseModal(); // Показываем модальное окно об успешной покупке
 }
 
 // Function to show notifications
@@ -521,7 +597,7 @@ function selectCard(card) {
     selectedCard = card;
 }
 
-// Функция для скрытия кнопки Sell при клике вне карточки
+// // Функция для скрытия кнопки Sell при клике вне карточки
 document.addEventListener('click', (event) => {
     if (selectedCard && !selectedCard.contains(event.target)) {
         const sellButton = selectedCard.querySelector('.sell-button');
