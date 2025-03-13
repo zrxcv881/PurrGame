@@ -689,7 +689,7 @@ function updateProfileStatistics() {
 // Инициализация Telegram Web App
 if (window.Telegram && window.Telegram.WebApp) {
     Telegram.WebApp.ready(); // Инициализация WebApp
-    Telegram.WebApp.expand(); // Открываем мини-апку в полноэкранном режиме
+    Telegram.WebApp.requestFullscreen(); // Открываем мини-апку в полноэкранном режиме
 
     const user = Telegram.WebApp.initDataUnsafe.user;
     if (user) {
