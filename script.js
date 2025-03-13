@@ -3,9 +3,18 @@ let userCards = [];
 let tokens = 0;
 let miningActive = false;
 let miningEndTime = 0;
-let marketListings = []; // Список карточек на продажу
-let selectedCardIndex = null; // Индекс выбранной карточки для продажи
-let currentPurchaseIndex = null; // Индекс карточки для покупки
+let marketListings = [];
+let selectedCardIndex = null;
+let currentPurchaseIndex = null;
+
+// Mining upgrades
+let miningUpgrades = [
+    { level: 1, cost: 1000, bonus: 10, purchased: false },
+    { level: 2, cost: 5000, bonus: 10, purchased: false },
+    { level: 3, cost: 10000, bonus: 5, purchased: false }
+];
+let miningEfficiency = 0;
+let currentUpgradeIndex = 0;
 
 // DOM Elements
 const tokenDisplay = document.getElementById('token-count');
@@ -17,55 +26,108 @@ const marketListingsContainer = document.getElementById('market-listings-contain
 
 // Function to switch sections
 function showSection(sectionId) {
-    // Скрываем все секции
     document.querySelectorAll('.content').forEach(div => {
         div.classList.remove('active');
         div.classList.add('hidden');
     });
 
-    // Показываем выбранную секцию
     const selectedSection = document.getElementById(sectionId);
     selectedSection.classList.remove('hidden');
     selectedSection.classList.add('active');
 
-    // Убираем активный класс у всех кнопок
     document.querySelectorAll('.navbar button').forEach(button => {
         button.classList.remove('active');
     });
 
-    // Добавляем активный класс к выбранной кнопке
     const activeButton = document.querySelector(`.navbar button[onclick="showSection('${sectionId}')"]`);
     if (activeButton) {
         activeButton.classList.add('active');
     }
 
-    // Обновляем список карточек в выпадающем списке
-    if (sectionId === 'exchange') {
-        updateCardsToSell();
-        updateMarketListings();
+    if (sectionId === 'market') {
+        showMarketSection('boxes');
     }
+}
+
+// Function to switch between Boxes and Upgrades sections
+function showMarketSection(section) {
+    document.querySelectorAll('.market-section').forEach(div => {
+        div.classList.remove('active');
+        div.classList.add('hidden');
+    });
+
+    const selectedSection = document.getElementById(`${section}-section`);
+    selectedSection.classList.remove('hidden');
+    selectedSection.classList.add('active');
+
+    document.querySelectorAll('.toggle-button').forEach(button => {
+        button.classList.remove('active');
+    });
+
+    const activeButton = document.getElementById(`toggle-${section}`);
+    activeButton.classList.add('active');
+
+    if (section === 'upgrades') {
+        updateUpgradeButton();
+    }
+}
+
+// Function to update the upgrade button
+function updateUpgradeButton() {
+    const upgradeButton = document.getElementById('upgrade-button');
+    if (currentUpgradeIndex >= miningUpgrades.length) {
+        upgradeButton.textContent = "Mining Fully Upgraded!";
+        upgradeButton.classList.add('disabled');
+        return;
+    }
+
+    const currentUpgrade = miningUpgrades[currentUpgradeIndex];
+    upgradeButton.textContent = `Upgrade Mining (Level ${currentUpgrade.level}): +${currentUpgrade.bonus}% (${currentUpgrade.cost} Purr)`;
+    upgradeButton.classList.remove('disabled');
+}
+
+// Function to purchase the current upgrade
+function purchaseUpgrade() {
+    if (currentUpgradeIndex >= miningUpgrades.length) {
+        showNotification("Info", "Mining is fully upgraded!");
+        return;
+    }
+
+    const currentUpgrade = miningUpgrades[currentUpgradeIndex];
+    if (tokens < currentUpgrade.cost) {
+        showNotification("Error", "Not enough Purr to purchase this upgrade.");
+        return;
+    }
+
+    tokens -= currentUpgrade.cost;
+    tokenDisplay.textContent = tokens.toString();
+
+    currentUpgrade.purchased = true;
+    miningEfficiency += currentUpgrade.bonus;
+
+    showNotification("Success", `Mining efficiency increased by ${currentUpgrade.bonus}%!`);
+    currentUpgradeIndex++;
+    updateUpgradeButton();
 }
 
 // Function to get a welcome card
 function getWelcomeCard() {
-    const welcomeCard = { type: "welcome", content: "🎉", owner: "user" }; // Добавляем владельца
-    userCards.push(welcomeCard); // Добавляем карточку в массив
-    updateCardsList(); // Обновляем отображение карточек
-    updateCardsToSell(); // Обновляем список карточек для продажи
-
-    // Показываем модальное окно
+    const welcomeCard = { type: "welcome", content: "🎉", owner: "user" };
+    userCards.push(welcomeCard);
+    updateCardsList();
+    updateCardsToSell();
     showModal();
 }
 
 // Function to update the cards list
 function updateCardsList() {
     const cardsContainer = document.getElementById('cards-container');
-    cardsContainer.innerHTML = ""; // Очищаем контейнер перед обновлением
+    cardsContainer.innerHTML = "";
 
     userCards.forEach((card, index) => {
         const cardElement = document.createElement('div');
         cardElement.className = 'card';
-        cardElement.textContent = card.content; // Добавляем содержимое карточки
+        cardElement.textContent = card.content;
         cardsContainer.appendChild(cardElement);
     });
 }
@@ -110,14 +172,13 @@ function startMining() {
                 clearInterval(timer);
                 miningText.textContent = "Claim";
                 miningTimer.classList.add('hidden');
-                miningTimer.textContent = ""; // Очищаем текст таймера
+                miningTimer.textContent = "";
                 miningButton.classList.remove('disabled');
                 miningButton.onclick = claimTokens;
 
-                // Add the token amount text
                 const tokenAmount = document.createElement('span');
                 tokenAmount.id = 'token-amount';
-                tokenAmount.textContent = "+120 Purr";
+                tokenAmount.textContent = `+${calculateMiningReward(120)} Purr`;
                 miningButton.appendChild(tokenAmount);
             } else {
                 const seconds = Math.floor(timeLeft / 1000);
@@ -127,6 +188,11 @@ function startMining() {
     }
 }
 
+// Function to calculate mining rewards with efficiency bonus
+function calculateMiningReward(baseReward) {
+    return baseReward * (1 + miningEfficiency / 100);
+}
+
 // Function to claim tokens
 function claimTokens() {
     if (miningActive && Date.now() >= miningEndTime) {
@@ -134,13 +200,14 @@ function claimTokens() {
         miningText.textContent = "Mining";
         miningButton.onclick = startMining;
 
-        // Remove the token amount text
         const tokenAmount = document.getElementById('token-amount');
         if (tokenAmount) {
             tokenAmount.remove();
         }
 
-        animateTokenIncrement(120); // Add 120 Purr
+        const baseReward = 120;
+        const totalReward = calculateMiningReward(baseReward);
+        animateTokenIncrement(totalReward);
     }
 }
 
@@ -167,38 +234,35 @@ function animateTokenIncrement(amount) {
 // Function to buy a box
 function buyBox(cost) {
     if (tokens >= cost) {
-        tokens -= cost; // Снимаем Purr
-        tokenDisplay.textContent = tokens.toString(); // Обновляем отображение Purr
+        tokens -= cost;
+        tokenDisplay.textContent = tokens.toString();
 
-        // Добавляем случайную карточку
         const randomCard = getRandomCard();
         userCards.push(randomCard);
-        updateCardsList(); // Обновляем отображение карточек
-        updateCardsToSell(); // Обновляем список карточек для продажи
-
-        // Показываем модальное окно с новой карточкой
+        updateCardsList();
+        updateCardsToSell();
         showModalWithCard(randomCard.content);
     } else {
-        showPurrModal(); // Показываем модальное окно "Недостаточно Purr"
+        showPurrModal();
     }
 }
 
-// Function to buy a box with Telegram Stars (заглушка)
+// Function to buy a box with Telegram Stars (stub)
 function buyBoxWithStars(stars) {
     alert(`This feature is not implemented yet. You need ${stars} Telegram Stars to buy this box.`);
 }
 
 // Function to get a random card
 function getRandomCard() {
-    const cards = ["🃏", "🌟", "⚡", "🔥", "💎", "🍀", "🐱", "🐾", "✨"]; // Новые карточки
+    const cards = ["🃏", "🌟", "⚡", "🔥", "💎", "🍀", "🐱", "🐾", "✨"];
     const randomIndex = Math.floor(Math.random() * cards.length);
-    return { type: "random", content: cards[randomIndex], owner: "user" }; // Добавляем владельца
+    return { type: "random", content: cards[randomIndex], owner: "user" };
 }
 
 // Function to show the modal with a specific card
 function showModalWithCard(cardContent) {
     const modalCard = document.querySelector(".card-modal-card");
-    modalCard.textContent = cardContent; // Устанавливаем содержимое карточки
+    modalCard.textContent = cardContent;
 
     const modal = document.getElementById('card-modal');
     modal.classList.remove('hidden');
@@ -207,33 +271,27 @@ function showModalWithCard(cardContent) {
 // Function to update the cards list in the sell modal
 function updateCardsToSell() {
     const cardsToSellContainer = document.getElementById('cards-to-sell');
-    cardsToSellContainer.innerHTML = ""; // Очищаем контейнер
+    cardsToSellContainer.innerHTML = "";
 
     userCards.forEach((card, index) => {
         const cardElement = document.createElement('div');
         cardElement.className = 'card-to-sell';
-        cardElement.textContent = card.content; // Отображаем содержимое карточки
+        cardElement.textContent = card.content;
 
-        // Проверяем, выставлена ли карточка на продажу
         const isOnSale = marketListings.some(listing => listing.card === card && listing.owner === "user");
 
-        // Если карточка уже на продаже, добавляем специальный стиль
         if (isOnSale) {
             cardElement.classList.add('on-sale');
         }
 
-        // Обработчик выбора карточки
         cardElement.addEventListener('click', () => {
-            // Снимаем выделение с предыдущей карточки
             document.querySelectorAll('.card-to-sell').forEach(card => {
                 card.classList.remove('selected');
             });
 
-            // Выделяем выбранную карточку
             cardElement.classList.add('selected');
-            selectedCardIndex = index; // Сохраняем индекс выбранной карточки
+            selectedCardIndex = index;
 
-            // Показываем кнопку отмены, если карточка уже на продаже
             const cancelButton = document.getElementById('cancel-sale-button');
             if (isOnSale) {
                 cancelButton.classList.remove('hidden');
@@ -253,68 +311,77 @@ function sellCard() {
         return;
     }
 
-    const price = parseInt(document.getElementById('card-price').value); // Цена
+    const price = parseInt(document.getElementById('card-price').value);
     if (isNaN(price) || price < 1) {
         showNotification("Error", "Please enter a valid price.");
         return;
     }
 
-    // Получаем карточку для продажи
     const cardToSell = userCards[selectedCardIndex];
+    userCards.splice(selectedCardIndex, 1);
 
-    // Добавляем карточку на рынок с указанием владельца
-    marketListings.push({ card: cardToSell, price: price, owner: "user" }); // Владелец - текущий пользователь
+    marketListings.push({ card: cardToSell, price: price, owner: "user" });
 
-    // Обновляем интерфейс
-    updateCardsToSell(); // Обновляем список карточек в модальном окне
-    updateMarketListings(); // Обновляем список карточек на рынке
-    updateCardsList(); // Обновляем инвентарь пользователя
+    updateCardsToSell();
+    updateMarketListings();
+    updateCardsList();
 
     showNotification("Success", "Card listed for sale!");
-    closeSellCardModal(); // Закрываем модальное окно
+    closeSellCardModal();
 }
+
 // Function to cancel the sale of a card
-function cancelSale() {
-    if (selectedCardIndex === null) {
-        showNotification("Error", "Please select a card to cancel the sale.");
+function cancelSale(listingIndex) {
+    if (listingIndex === null || listingIndex === undefined) {
+        showNotification("Error", "Please select a listing to cancel.");
         return;
     }
 
-    const selectedCard = userCards[selectedCardIndex];
+    const listing = marketListings[listingIndex];
 
-    // Находим объявление о продаже этой карточки
-    const listingIndex = marketListings.findIndex(listing => listing.card === selectedCard && listing.owner === "user");
-
-    if (listingIndex === -1) {
-        showNotification("Error", "This card is not listed for sale.");
+    // Проверяем, что текущий пользователь — создатель объявления
+    if (listing.owner !== "user") {
+        showNotification("Error", "You can only cancel your own listings.");
         return;
     }
 
-    // Удаляем карточку из списка продаж
+    // Возвращаем карточку в инвентарь пользователя
+    userCards.push(listing.card);
+
+    // Удаляем объявление из списка
     marketListings.splice(listingIndex, 1);
 
     // Обновляем интерфейс
-    updateMarketListings(); // Обновляем список карточек на рынке
-    updateCardsToSell(); // Обновляем список карточек в модальном окне
-    showNotification("Success", "Sale canceled successfully!");
+    updateMarketListings(); // Обновляем список объявлений
+    updateCardsList(); // Обновляем инвентарь пользователя
+    updateCardsToSell(); // Обновляем список карточек для продажи
 
-    // Скрываем кнопку отмены
-    const cancelButton = document.getElementById('cancel-sale-button');
-    cancelButton.classList.add('hidden');
+    showNotification("Success", "Sale canceled successfully!");
 }
 
 // Function to update the market listings
 function updateMarketListings() {
     marketListingsContainer.innerHTML = ""; // Очищаем контейнер
+
     marketListings.forEach((listing, index) => {
         const listingElement = document.createElement('div');
         listingElement.className = 'market-listing';
 
+        // Содержимое объявления
         listingElement.innerHTML = `
             <div class="card-content">${listing.card.content}</div>
             <div class="card-price">${listing.price} Purr</div>
             <button onclick="openPurchaseConfirmModal(${index})">Buy</button>
         `;
+
+        // Если текущий пользователь — создатель объявления, добавляем кнопку отмены
+        if (listing.owner === "user") {
+            const cancelButton = document.createElement('button');
+            cancelButton.textContent = "Cancel Sale";
+            cancelButton.className = 'cancel-sale-button';
+            cancelButton.onclick = () => cancelSale(index); // Передаём индекс объявления
+            listingElement.appendChild(cancelButton);
+        }
 
         marketListingsContainer.appendChild(listingElement);
     });
@@ -351,29 +418,25 @@ function closePurchaseConfirmModal() {
 
 // Function to buy a card from the market
 function buyMarketCard(index) {
-    const listing = marketListings[index]; // Карточка на продажу
+    const listing = marketListings[index];
     if (tokens < listing.price) {
         showNotification("Error", "Not enough Purr to buy this card.");
         return;
     }
 
-    tokens -= listing.price; // Снимаем Purr у покупателя
-    tokenDisplay.textContent = tokens.toString(); // Обновляем отображение Purr
+    tokens -= listing.price;
+    tokenDisplay.textContent = tokens.toString();
 
-    // Начисляем Purr продавцу (в реальном приложении это должно быть на сервере)
     if (listing.owner === "user") {
-        tokens += listing.price; // Если продавец - текущий пользователь
+        tokens += listing.price;
         tokenDisplay.textContent = tokens.toString();
-    } else {
-        // Здесь можно добавить логику для начисления Purr другому пользователю
-        console.log(`Purr transferred to ${listing.owner}`);
     }
 
-    userCards.push(listing.card); // Добавляем карточку в инвентарь покупателя
-    marketListings.splice(index, 1); // Удаляем карточку с рынка
+    userCards.push(listing.card);
+    marketListings.splice(index, 1);
 
-    updateMarketListings(); // Обновляем список карточек на рынке
-    updateCardsList(); // Обновляем инвентарь пользователя
+    updateMarketListings();
+    updateCardsList();
     showNotification("Success", "Card purchased successfully!");
 }
 
@@ -394,13 +457,10 @@ function closeNotificationModal() {
     notificationModal.classList.add('hidden');
 }
 
-// Initialize the app
-showSection('home'); // Show the home section by default
-updateCardsToSell(); // Обновляем список карточек при загрузке
 // Function to open the sell card modal
 function openSellCardModal() {
-    selectedCardIndex = null; // Сбрасываем выбор
-    updateCardsToSell(); // Обновляем список карточек
+    selectedCardIndex = null;
+    updateCardsToSell();
     const modal = document.getElementById('sell-card-modal');
     modal.classList.remove('hidden');
 }
@@ -410,45 +470,3 @@ function closeSellCardModal() {
     const modal = document.getElementById('sell-card-modal');
     modal.classList.add('hidden');
 }
-// Сохранить прогресс на сервере
-async function saveProgress(chatId) {
-    const progress = { tokens, cards: userCards };
-    try {
-        const response = await fetch(' https://purrplay-3mftwg6p9-zrxcv881s-projects.vercel.app/save-progress', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ chatId, progress }),
-        });
-
-        if (!response.ok) {
-            throw new Error('Failed to save progress');
-        }
-
-        console.log('Progress saved successfully!');
-    } catch (error) {
-        console.error('Error saving progress:', error);
-    }
-}
-
-// Загрузить прогресс с сервера
-async function loadProgress(chatId) {
-    try {
-        const response = await fetch(` https://purrplay-3mftwg6p9-zrxcv881s-projects.vercel.app/load-progress?chatId=${chatId}`);
-        if (!response.ok) {
-            throw new Error('Failed to load progress');
-        }
-
-        const progress = await response.json();
-        tokens = progress.tokens;
-        userCards = progress.cards;
-
-        console.log('Progress loaded successfully:', progress);
-    } catch (error) {
-        console.error('Error loading progress:', error);
-    }
-}
-
-// Пример использования
-const chatId = '123456789'; // Идентификатор пользователя
-loadProgress(chatId); // Загрузить прогресс при запуске мини-апки
-saveProgress(chatId); // Сохранить прогресс при изменении данных
