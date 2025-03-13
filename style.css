@@ -748,3 +748,29 @@ body, html {
         opacity: 1;
     }
 }
+/* Запрет выделения и копирования для всех элементов */
+* {
+    -webkit-user-select: none; /* Запрет выделения для Safari */
+    -moz-user-select: none;    /* Запрет выделения для Firefox */
+    -ms-user-select: none;     /* Запрет выделения для IE/Edge */
+    user-select: none;         /* Запрет выделения для современных браузеров */
+    -webkit-tap-highlight-color: transparent; /* Убираем подсветку при нажатии на мобильных устройствах */
+}
+
+/* Разрешение выделения для текстовых полей и текстовых областей */
+input, textarea {
+    -webkit-user-select: text; /* Разрешение выделения для Safari */
+    -moz-user-select: text;    /* Разрешение выделения для Firefox */
+    -ms-user-select: text;     /* Разрешение выделения для IE/Edge */
+    user-select: text;         /* Разрешение выделения для современных браузеров */
+}
+
+/* Запрет выделения для кнопок и других интерактивных элементов */
+button, a, .navbar, .modal-content, .card, .box, .market-listing {
+    pointer-events: none; /* Запрет взаимодействия с элементами */
+}
+
+/* Разрешение взаимодействия для интерактивных элементов */
+button, a {
+    pointer-events: auto; /* Разрешение взаимодействия с кнопками и ссылками */
+}
