@@ -686,16 +686,19 @@ function updateProfileStatistics() {
     `;
 }
 
-// Инициализация приложения
+// Инициализация Telegram Web App
 if (window.Telegram && window.Telegram.WebApp) {
-    const user = window.Telegram.WebApp.initDataUnsafe.user;
+    Telegram.WebApp.ready(); // Инициализация WebApp
+    Telegram.WebApp.expand(); // Открываем мини-апку в полноэкранном режиме
 
+    const user = Telegram.WebApp.initDataUnsafe.user;
     if (user) {
         const welcomeMessage = `Welcome, ${user.first_name || "User"}!`;
         document.getElementById('welcome-text').textContent = welcomeMessage;
     }
+} else {
+    console.error("Telegram Web App SDK не загружен!");
 }
-
 // Привязка событий к кнопкам
 document.getElementById('mining-button').addEventListener('click', startMining);
 document.getElementById('get-card-button').addEventListener('click', getWelcomeCard);
