@@ -15,26 +15,26 @@
     </div>
 
     <!-- Home Section -->
-    <div class="content active" id="home">
-        <h1 class="home-title">Home</h1>
-        <p class="welcome-text">Welcome! Start mining or explore other sections.</p>
-        <button id="get-card-button" class="get-card-button" onclick="getWelcomeCard()">Get Welcome Card</button>
+<div class="content active" id="home">
+    <h1 class="home-title">Home</h1>
+    <p id="welcome-text" class="welcome-text">Welcome! Start mining or explore other sections.</p> <!-- Элемент для приветствия -->
+    <button id="get-card-button" class="get-card-button" onclick="getWelcomeCard()">Get Welcome Card</button>
 
-        <!-- Mining Section -->
-        <div class="mining-container">
-            <div id="mining-button" class="mining-button" onclick="startMining()">
-                <span id="mining-text">Mining</span>
-                <span id="mining-timer" class="hidden"></span> <!-- Timer -->
-            </div>
+    <!-- Mining Section -->
+    <div class="mining-container">
+        <div id="mining-button" class="mining-button" onclick="startMining()">
+            <span id="mining-text">Mining</span>
+            <span id="mining-timer" class="hidden"></span> <!-- Timer -->
         </div>
     </div>
+</div>
 
     <!-- Storage Section -->
     <div class="content hidden" id="storage">
         <h1>Storage</h1>
         <p>Your cards will be displayed here.</p>
         <div class="cards-container" id="cards-container">
-            <!-- Cards will be added here -->
+            </div>
         </div>
     </div>
 
@@ -103,11 +103,14 @@
     </div>
 
     <!-- Profile Section -->
-    <div class="content hidden" id="profile">
-        <h1>Profile</h1>
-        <p>Your profile information.</p>
+<div class="content hidden" id="profile">
+    <h1>Profile</h1>
+    <div class="statistics">
+        <p>Total Mined Purr: 0</p>
+        <p>Total Spent Purr: 0</p>
+        <p>Total Opened Boxes: 0</p>
     </div>
-
+</div>
     <!-- Navbar -->
     <div class="navbar">
         <button onclick="showSection('home')">
@@ -153,21 +156,24 @@
         </div>
     </div>
 
-    <!-- Modal for Selling Card -->
-    <div id="sell-card-modal" class="modal hidden">
-        <div class="modal-content">
-            <h2>Sell Your Card</h2>
-            <div class="cards-to-sell" id="cards-to-sell">
-                <!-- Cards will be added here -->
-            </div>
-            <input type="number" id="card-price" placeholder="Enter price in Purr" min="1">
-            <button onclick="sellCard()">Sell Card</button>
-            <button onclick="closeSellCardModal()">Close</button>
-            <!-- Кнопка отмены продажи -->
-            <button id="cancel-sale-button" class="hidden" onclick="cancelSale()">Cancel Sale</button>
+  <!-- Modal for Selling Card -->
+<div id="sell-card-modal" class="modal hidden">
+    <div class="modal-content">
+        <h2>Sell Your Card</h2>
+        <div class="cards-to-sell" id="cards-to-sell">
+            <!-- Cards will be added here -->
         </div>
+        <div class="price-input-container">
+            <input type="number" id="card-price" placeholder="Enter price in Purr" min="1">
+            <button id="confirm-price-button" onclick="confirmPrice()">✓</button>
+            <button id="edit-price-button" class="hidden" onclick="editPrice()">✎</button>
+        </div>
+        <button onclick="sellCard()">Sell Card</button>
+        <button onclick="closeSellCardModal()">Close</button>
+        <!-- Кнопка отмены продажи -->
+        <button id="cancel-sale-button" class="hidden" onclick="cancelSale()">Cancel Sale</button>
     </div>
-
+</div>
     <!-- Modal for Purchase Confirmation -->
     <div id="purchase-confirm-modal" class="modal hidden">
         <div class="modal-content">
