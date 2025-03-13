@@ -6,6 +6,10 @@ let miningEndTime = 0;
 let marketListings = [];
 let selectedCardIndex = null;
 let currentPurchaseIndex = null;
+// Variables for statistics
+let totalMinedPurr = 0; // Всего намайнено Purr
+let totalSpentPurr = 0; // Всего потрачено Purr
+let totalOpenedBoxes = 0; // Всего открыто боксов
 
 // Mining upgrades
 let miningUpgrades = [
@@ -122,16 +126,22 @@ function getWelcomeCard() {
 // Function to update the cards list
 function updateCardsList() {
     const cardsContainer = document.getElementById('cards-container');
-    cardsContainer.innerHTML = "";
+    cardsContainer.innerHTML = ""; // Очищаем контейнер
 
     userCards.forEach((card, index) => {
         const cardElement = document.createElement('div');
         cardElement.className = 'card';
-        cardElement.textContent = card.content;
+        cardElement.innerHTML = `
+            <div class="card-content">${card.content}</div>
+            <button class="sell-button hidden" onclick="sellSelectedCard(event)">Sell</button>
+        `;
+
+        // Добавляем обработчик события для выбора карточки
+        cardElement.addEventListener('click', () => selectCard(cardElement));
+
         cardsContainer.appendChild(cardElement);
     });
 }
-
 // Function to show the modal
 function showModal() {
     const modal = document.getElementById('card-modal');
@@ -208,6 +218,10 @@ function claimTokens() {
         const baseReward = 120;
         const totalReward = calculateMiningReward(baseReward);
         animateTokenIncrement(totalReward);
+
+        // Обновляем статистику
+        totalMinedPurr += totalReward;
+        updateProfileStatistics();
     }
 }
 
@@ -237,6 +251,11 @@ function buyBox(cost) {
         tokens -= cost;
         tokenDisplay.textContent = tokens.toString();
 
+        // Обновляем статистику
+        totalSpentPurr += cost;
+        totalOpenedBoxes += 1;
+        updateProfileStatistics();
+
         const randomCard = getRandomCard();
         userCards.push(randomCard);
         updateCardsList();
@@ -246,7 +265,6 @@ function buyBox(cost) {
         showPurrModal();
     }
 }
-
 // Function to buy a box with Telegram Stars (stub)
 function buyBoxWithStars(stars) {
     alert(`This feature is not implemented yet. You need ${stars} Telegram Stars to buy this box.`);
@@ -271,17 +289,17 @@ function showModalWithCard(cardContent) {
 // Function to update the cards list in the sell modal
 function updateCardsToSell() {
     const cardsToSellContainer = document.getElementById('cards-to-sell');
-    cardsToSellContainer.innerHTML = "";
+    cardsToSellContainer.innerHTML = ""; // Очищаем контейнер
 
     userCards.forEach((card, index) => {
         const cardElement = document.createElement('div');
         cardElement.className = 'card-to-sell';
         cardElement.textContent = card.content;
 
-        const isOnSale = marketListings.some(listing => listing.card === card && listing.owner === "user");
-
-        if (isOnSale) {
-            cardElement.classList.add('on-sale');
+        // Если карточка выбрана для продажи, добавляем класс selected
+        if (selectedCardForSale && card.content === selectedCardForSale.querySelector('.card-content').textContent) {
+            cardElement.classList.add('selected');
+            selectedCardIndex = index;
         }
 
         cardElement.addEventListener('click', () => {
@@ -293,7 +311,7 @@ function updateCardsToSell() {
             selectedCardIndex = index;
 
             const cancelButton = document.getElementById('cancel-sale-button');
-            if (isOnSale) {
+            if (marketListings.some(listing => listing.card === card && listing.owner === "user")) {
                 cancelButton.classList.remove('hidden');
             } else {
                 cancelButton.classList.add('hidden');
@@ -303,7 +321,6 @@ function updateCardsToSell() {
         cardsToSellContainer.appendChild(cardElement);
     });
 }
-
 // Function to sell a card
 function sellCard() {
     if (selectedCardIndex === null) {
@@ -320,6 +337,7 @@ function sellCard() {
     const cardToSell = userCards[selectedCardIndex];
     userCards.splice(selectedCardIndex, 1);
 
+    // Добавляем новое объявление в начало массива
     marketListings.unshift({ card: cardToSell, price: price, owner: "user" });
 
     updateCardsToSell();
@@ -470,5 +488,112 @@ function openSellCardModal() {
 function closeSellCardModal() {
     const modal = document.getElementById('sell-card-modal');
     modal.classList.add('hidden');
-                                                        }
-        
+}
+let selectedCard = null;
+
+// Функция для выбора карточки
+function selectCard(card) {
+    // Скрываем кнопку Sell на всех карточках
+    document.querySelectorAll('.sell-button').forEach(button => {
+        button.classList.add('hidden');
+    });
+
+    // Показываем кнопку Sell на выбранной карточке
+    const sellButton = card.querySelector('.sell-button');
+    sellButton.classList.remove('hidden');
+
+    // Запоминаем выбранную карточку
+    selectedCard = card;
+}
+
+// Функция для скрытия кнопки Sell при клике вне карточки
+document.addEventListener('click', (event) => {
+    if (selectedCard && !selectedCard.contains(event.target)) {
+        const sellButton = selectedCard.querySelector('.sell-button');
+        if (sellButton) {
+            sellButton.classList.add('hidden');
+        }
+        selectedCard = null;
+    }
+});
+
+// Функция для продажи выбранной карточки
+let selectedCardForSale = null; // Переменная для хранения выбранной карточки
+
+// Функция для продажи выбранной карточки
+function sellSelectedCard(event) {
+    event.stopPropagation(); // Останавливаем всплытие события
+
+    // Запоминаем выбранную карточку
+    selectedCardForSale = selectedCard;
+
+    // Переходим в раздел Market
+    showSection('market');
+
+    // Открываем окно продажи карточки
+    openSellCardModal();
+
+    // Скрываем кнопку Sell
+    const sellButton = selectedCard.querySelector('.sell-button');
+    if (sellButton) {
+        sellButton.classList.add('hidden');
+    }
+
+    // Сбрасываем выбранную карточку
+    selectedCard = null;
+}
+
+// Функция для открытия модального окна продажи карточки
+function openSellCardModal() {
+    updateCardsToSell(); // Обновляем список карточек для продажи
+
+    // Выбираем карточку, с которой перешли в Market
+    if (selectedCardForSale) {
+        const cardsToSell = document.querySelectorAll('.card-to-sell');
+        cardsToSell.forEach((card, index) => {
+            if (card.textContent === selectedCardForSale.querySelector('.card-content').textContent) {
+                card.classList.add('selected');
+                selectedCardIndex = index; // Запоминаем индекс выбранной карточки
+            }
+        });
+    }
+
+    const modal = document.getElementById('sell-card-modal');
+    modal.classList.remove('hidden');
+}
+// Function to confirm the price and hide the keyboard
+function confirmPrice() {
+    const priceInput = document.getElementById('card-price');
+    priceInput.blur(); // Скрываем клавиатуру
+}
+// Функция для подтверждения цены
+function confirmPrice() {
+    const priceInput = document.getElementById('card-price');
+    const confirmButton = document.getElementById('confirm-price-button');
+    const editButton = document.getElementById('edit-price-button');
+
+    // Блокируем поле ввода
+    priceInput.disabled = true;
+
+    // Скрываем кнопку подтверждения и показываем кнопку редактирования
+    confirmButton.classList.add('hidden');
+    editButton.classList.remove('hidden');
+
+    // Скрываем клавиатуру
+    priceInput.blur();
+}
+
+// Функция для редактирования цены
+function editPrice() {
+    const priceInput = document.getElementById('card-price');
+    const confirmButton = document.getElementById('confirm-price-button');
+    const editButton = document.getElementById('edit-price-button');
+
+    // Разблокируем поле ввода
+    priceInput.disabled = false;
+
+    // Показываем кнопку подтверждения и скрываем кнопку редактирования
+    confirmButton.classList.remove('hidden');
+    editButton.classList.add('hidden');
+
+    // Фокусируемся на поле ввода, чт
