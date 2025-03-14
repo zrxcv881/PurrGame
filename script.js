@@ -27,6 +27,59 @@ const miningTimer = document.getElementById('mining-timer');
 const getCardButton = document.getElementById('get-card-button');
 const marketListingsContainer = document.getElementById('market-listings-container');
 
+// ================== Облачное хранилище Telegram ==================
+
+// Сохранение прогресса
+function saveProgress() {
+    const progress = {
+        userCards,
+        tokens,
+        miningUpgrades,
+        miningEfficiency,
+        currentUpgradeIndex,
+        totalMinedPurr,
+        totalSpentPurr,
+        totalOpenedBoxes
+    };
+
+    Telegram.WebApp.CloudStorage.setItem('progress', JSON.stringify(progress), (error, success) => {
+        if (error) {
+            console.error('Error saving progress:', error);
+        } else {
+            console.log('Progress saved successfully:', success);
+        }
+    };
+}
+
+// Загрузка прогресса
+function loadProgress() {
+    Telegram.WebApp.CloudStorage.getItem('progress', (error, data) => {
+        if (error) {
+            console.error('Error loading progress:', error);
+        } else if (data) {
+            const progress = JSON.parse(data);
+            userCards = progress.userCards || [];
+            tokens = progress.tokens || 0;
+            miningUpgrades = progress.miningUpgrades || [];
+            miningEfficiency = progress.miningEfficiency || 0;
+            currentUpgradeIndex = progress.currentUpgradeIndex || 0;
+            totalMinedPurr = progress.totalMinedPurr || 0;
+            totalSpentPurr = progress.totalSpentPurr || 0;
+            totalOpenedBoxes = progress.totalOpenedBoxes || 0;
+
+            updateUI();
+        }
+    });
+}
+
+// Обновление интерфейса после загрузки данных
+function updateUI() {
+    tokenDisplay.textContent = tokens.toString();
+    updateCardsList();
+    updateMarketListings();
+    updateUpgradeButton();
+}
+
 // ================== НОВЫЙ ФУНКЦИОНАЛ: ОПЛАТА ЗА 1 TELEGRAM STAR ==================
 
 // Функция для создания инвойса
@@ -89,6 +142,7 @@ const buyBoxWithStars = async (stars) => {
                 updateCardsList();
                 updateCardsToSell();
                 showModalWithCard(randomCard.content);
+                saveProgress(); // Сохраняем прогресс
             } else {
                 showNotification('Error', 'Payment failed. Please try again.');
             }
@@ -194,6 +248,7 @@ function purchaseUpgrade() {
     showNotification("Success", `Mining efficiency increased by ${currentUpgrade.bonus}%!`);
     currentUpgradeIndex++;
     updateUpgradeButton();
+    saveProgress(); // Сохраняем прогресс
 }
 
 function getWelcomeCard() {
@@ -202,6 +257,7 @@ function getWelcomeCard() {
     updateCardsList();
     updateCardsToSell();
     showModal();
+    saveProgress(); // Сохраняем прогресс
 }
 
 function updateCardsList() {
@@ -354,6 +410,7 @@ function claimTokens() {
 
         totalMinedPurr += totalReward;
         updateProfileStatistics();
+        saveProgress(); // Сохраняем прогресс
     }
 }
 
@@ -390,6 +447,7 @@ function buyBox(cost) {
         updateCardsList();
         updateCardsToSell();
         showModalWithCard(randomCard.content);
+        saveProgress(); // Сохраняем прогресс
     } else {
         showPurrModal();
     }
@@ -467,6 +525,7 @@ function sellCard() {
 
     showSuccessListingModal();
     closeSellCardModal();
+    saveProgress(); // Сохраняем прогресс
 }
 
 function cancelSale(listingIndex) {
@@ -490,6 +549,7 @@ function cancelSale(listingIndex) {
     updateCardsToSell();
 
     showCancelSaleModal();
+    saveProgress(); // Сохраняем прогресс
 }
 
 function updateMarketListings() {
@@ -570,6 +630,7 @@ function buyMarketCard(index) {
     updateMarketListings();
     updateCardsList();
     showSuccessPurchaseModal();
+    saveProgress(); // Сохраняем прогресс
 }
 
 function showNotification(title, message) {
@@ -676,6 +737,9 @@ if (window.Telegram && window.Telegram.WebApp) {
         const welcomeMessage = `Welcome, ${user.first_name || "User"}!`;
         document.getElementById('welcome-text').textContent = welcomeMessage;
     }
+
+    // Загрузка прогресса при запуске
+    loadProgress();
 }
 
 // Привязка событий к кнопкам
