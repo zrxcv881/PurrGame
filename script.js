@@ -20,12 +20,7 @@ let miningEfficiency = 0;
 let currentUpgradeIndex = 0;
 
 // DOM Elements
-const tokenDisplay = document.getElementById('token-count');
-const miningButton = document.getElementById('mining-button');
-const miningText = document.getElementById('mining-text');
-const miningTimer = document.getElementById('mining-timer');
-const getCardButton = document.getElementById('get-card-button');
-const marketListingsContainer = document.getElementById('market-listings-container');
+let tokenDisplay, miningButton, miningText, miningTimer, getCardButton, marketListingsContainer;
 
 // ================== Облачное хранилище Telegram ==================
 
@@ -48,7 +43,7 @@ function saveProgress() {
         } else {
             console.log('Progress saved successfully:', success);
         }
-    };
+    });
 }
 
 // Загрузка прогресса
@@ -743,7 +738,24 @@ if (window.Telegram && window.Telegram.WebApp) {
 }
 
 // Привязка событий к кнопкам
-document.getElementById('mining-button').addEventListener('click', startMining);
-document.getElementById('get-card-button').addEventListener('click', getWelcomeCard);
-document.getElementById('toggle-boxes').addEventListener('click', () => showMarketSection('boxes'));
-document.getElementById('toggle-upgrades').addEventListener('click', () => showMarketSection('upgrades'));
+document.addEventListener('DOMContentLoaded', () => {
+    tokenDisplay = document.getElementById('token-count');
+    miningButton = document.getElementById('mining-button');
+    miningText = document.getElementById('mining-text');
+    miningTimer = document.getElementById('mining-timer');
+    getCardButton = document.getElementById('get-card-button');
+    marketListingsContainer = document.getElementById('market-listings-container');
+
+    if (miningButton) {
+        miningButton.addEventListener('click', startMining);
+    }
+    if (getCardButton) {
+        getCardButton.addEventListener('click', getWelcomeCard);
+    }
+    if (document.getElementById('toggle-boxes')) {
+        document.getElementById('toggle-boxes').addEventListener('click', () => showMarketSection('boxes'));
+    }
+    if (document.getElementById('toggle-upgrades')) {
+        document.getElementById('toggle-upgrades').addEventListener('click', () => showMarketSection('upgrades'));
+    }
+});
