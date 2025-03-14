@@ -65,7 +65,24 @@ function showSection(sectionId) {
         showMarketSection('boxes');
     }
 }
-
+const createInvoiceLink = async (title, description, payload, price) => {
+    const response = await fetch(`https://api.telegram.org/bot<7879732935:AAHpo1NIdQJXUMVCuVXYupEGsqo6-PY0Wjg>/createInvoiceLink`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            title: title,
+            description: description,
+            payload: payload,
+            provider_token: '', // Не требуется для Telegram Stars
+            currency: 'XTR', // Валюта Telegram Stars
+            prices: [{ label: '1 Box', amount: price * 100 }], // 1 Star = 100
+        }),
+    });
+    const data = await response.json();
+    return data.result;
+};
 // Function to switch between Boxes and Upgrades sections
 function showMarketSection(section) {
     document.querySelectorAll('.market-section').forEach(div => {
@@ -351,11 +368,68 @@ function buyBox(cost) {
         showPurrModal();
     }
 }
+const buyBoxWithStars = async (stars) => {
+    try {
+        // Создаем инвойс
+        const invoiceLink = await createInvoiceLink(
+            'Purchase Box', // Название товара
+            'Get a random card by purchasing this box.', // Описание
+            'box_purchase', // Уникальный идентификатор заказа
+            stars // Количество Stars (в данном случае 1)
+        );
 
-// Function to buy a box with Telegram Stars (stub)
-function buyBoxWithStars(stars) {
-    Telegram.WebApp.showAlert(`This feature is not implemented yet. You need ${stars} Telegram Stars to buy this box.`);
-}
+        // Открываем инвойс
+        Telegram.WebApp.openInvoice(invoiceLink, (status) => {
+            if (status === 'paid') {
+                // Оплата прошла успешно
+                showNotification('Success', 'Payment successful! Your box has been purchased.');
+                // Выдаем бокс пользователю
+                const randomCard = getRandomCard();
+                userCards.push(randomCard);
+                updateCardsList();
+                updateCardsToSell();
+                showModalWithCard(randomCard.content);
+            } else {
+                // Оплата не прошла
+                showNotification('Error', 'Payment failed. Please try again.');
+            }
+        });
+    } catch (error) {
+        console.error('Error creating invoice:', error);
+        showNotification('Error', 'Failed to create invoice. Please try again.');
+    }
+};
+const buyBoxWithStars = async (stars) => {
+    try {
+        // Создаем инвойс
+        const invoiceLink = await createInvoiceLink(
+            'Purchase Box', // Название товара
+            'Get a random card by purchasing this box.', // Описание
+            'box_purchase', // Уникальный идентификатор заказа
+            stars // Количество Stars (в данном случае 1)
+        );
+
+        // Открываем инвойс
+        Telegram.WebApp.openInvoice(invoiceLink, (status) => {
+            if (status === 'paid') {
+                // Оплата прошла успешно
+                showNotification('Success', 'Payment successful! Your box has been purchased.');
+                // Выдаем бокс пользователю
+                const randomCard = getRandomCard();
+                userCards.push(randomCard);
+                updateCardsList();
+                updateCardsToSell();
+                showModalWithCard(randomCard.content);
+            } else {
+                // Оплата не прошла
+                showNotification('Error', 'Payment failed. Please try again.');
+            }
+        });
+    } catch (error) {
+        console.error('Error creating invoice:', error);
+        showNotification('Error', 'Failed to create invoice. Please try again.');
+    }
+};
 
 // Function to get a random card
 function getRandomCard() {
