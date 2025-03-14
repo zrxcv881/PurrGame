@@ -1,4 +1,4 @@
-// Variables
+// Переменные
 let userCards = [];
 let tokens = 0;
 let miningActive = false;
@@ -27,21 +27,75 @@ const miningTimer = document.getElementById('mining-timer');
 const getCardButton = document.getElementById('get-card-button');
 const marketListingsContainer = document.getElementById('market-listings-container');
 
-// Инициализация Telegram Web App
-if (window.Telegram && window.Telegram.WebApp) {
-    Telegram.WebApp.ready();
-    Telegram.WebApp.expand(); // Открываем в полноэкранном режиме
+// ================== НОВЫЙ ФУНКЦИОНАЛ: ОПЛАТА ЗА 1 TELEGRAM STAR ==================
 
-    const user = Telegram.WebApp.initDataUnsafe.user;
-    if (user) {
-        const welcomeMessage = `Welcome, ${user.first_name || "User"}!`;
-        document.getElementById('welcome-text').textContent = welcomeMessage;
+// Функция для создания инвойса
+const createInvoiceLink = async (title, description, payload, price) => {
+    const response = await fetch(`https://api.telegram.org/bot<YOUR_BOT_TOKEN>/createInvoiceLink`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            title: title,
+            description: description,
+            payload: payload,
+            provider_token: '', // Не требуется для Telegram Stars
+            currency: 'XTR', // Валюта Telegram Stars
+            prices: [{ label: '1 Box', amount: price * 100 }], // 1 Star = 100
+        }),
+    });
+    const data = await response.json();
+    return data.result;
+};
+
+// Функция для покупки бокса за Stars
+const buyBoxWithStars = async (stars) => {
+    try {
+        // Создаем инвойс
+        const invoiceLink = await createInvoiceLink(
+            'Purchase Box', // Название товара
+            'Get a random card by purchasing this box.', // Описание
+            'box_purchase', // Уникальный идентификатор заказа
+            stars // Количество Stars (в данном случае 1)
+        );
+
+        // Открываем инвойс
+        Telegram.WebApp.openInvoice(invoiceLink, (status) => {
+            if (status === 'paid') {
+                // Оплата прошла успешно
+                showNotification('Success', 'Payment successful! Your box has been purchased.');
+                // Выдаем бокс пользователю
+                const randomCard = getRandomCard();
+                userCards.push(randomCard);
+                updateCardsList();
+                updateCardsToSell();
+                showModalWithCard(randomCard.content);
+            } else {
+                // Оплата не прошла
+                showNotification('Error', 'Payment failed. Please try again.');
+            }
+        });
+    } catch (error) {
+        console.error('Error creating invoice:', error);
+        showNotification('Error', 'Failed to create invoice. Please try again.');
     }
-} else {
-    console.error("Telegram Web App SDK не загружен!");
+};
+
+// Обработчик события invoiceClosed
+if (window.Telegram && window.Telegram.WebApp) {
+    Telegram.WebApp.onEvent('invoiceClosed', (event) => {
+        if (event.status === 'paid') {
+            showNotification('Success', 'Payment successful! Your box has been purchased.');
+        } else {
+            showNotification('Error', 'Payment failed. Please try again.');
+        }
+    });
 }
 
-// Function to switch sections
+// ================== КОНЕЦ НОВОГО ФУНКЦИОНАЛА ==================
+
+// Остальные функции (ваш текущий код)
 function showSection(sectionId) {
     document.querySelectorAll('.content').forEach(div => {
         div.classList.remove('active');
@@ -65,25 +119,7 @@ function showSection(sectionId) {
         showMarketSection('boxes');
     }
 }
-const createInvoiceLink = async (title, description, payload, price) => {
-    const response = await fetch(`https://api.telegram.org/bot<7879732935:AAHpo1NIdQJXUMVCuVXYupEGsqo6-PY0Wjg>/createInvoiceLink`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-            title: title,
-            description: description,
-            payload: payload,
-            provider_token: '', // Не требуется для Telegram Stars
-            currency: 'XTR', // Валюта Telegram Stars
-            prices: [{ label: '1 Box', amount: price * 100 }], // 1 Star = 100
-        }),
-    });
-    const data = await response.json();
-    return data.result;
-};
-// Function to switch between Boxes and Upgrades sections
+
 function showMarketSection(section) {
     document.querySelectorAll('.market-section').forEach(div => {
         div.classList.remove('active');
@@ -106,7 +142,6 @@ function showMarketSection(section) {
     }
 }
 
-// Function to update the upgrade button
 function updateUpgradeButton() {
     const upgradeButton = document.getElementById('upgrade-button');
     if (currentUpgradeIndex >= miningUpgrades.length) {
@@ -120,7 +155,6 @@ function updateUpgradeButton() {
     upgradeButton.classList.remove('disabled');
 }
 
-// Function to purchase the current upgrade
 function purchaseUpgrade() {
     if (currentUpgradeIndex >= miningUpgrades.length) {
         showNotification("Info", "Mining is fully upgraded!");
@@ -129,7 +163,7 @@ function purchaseUpgrade() {
 
     const currentUpgrade = miningUpgrades[currentUpgradeIndex];
     if (tokens < currentUpgrade.cost) {
-        showNotEnoughPurrModal(); // Показываем модальное окно о недостатке Purr
+        showNotEnoughPurrModal();
         return;
     }
 
@@ -144,7 +178,6 @@ function purchaseUpgrade() {
     updateUpgradeButton();
 }
 
-// Function to get a welcome card
 function getWelcomeCard() {
     const welcomeCard = { type: "welcome", content: "🎉", owner: "user" };
     userCards.push(welcomeCard);
@@ -153,10 +186,9 @@ function getWelcomeCard() {
     showModal();
 }
 
-// Function to update the cards list
 function updateCardsList() {
     const cardsContainer = document.getElementById('cards-container');
-    cardsContainer.innerHTML = ""; // Очищаем контейнер
+    cardsContainer.innerHTML = "";
 
     userCards.forEach((card, index) => {
         const cardElement = document.createElement('div');
@@ -166,114 +198,96 @@ function updateCardsList() {
             <button class="sell-button hidden" onclick="sellSelectedCard(event)">Sell</button>
         `;
 
-        // Добавляем обработчик события для выбора карточки
         cardElement.addEventListener('click', () => selectCard(cardElement));
 
         cardsContainer.appendChild(cardElement);
     });
 }
 
-// Function to show the modal
 function showModal() {
     const modal = document.getElementById('card-modal');
     modal.classList.remove('hidden');
 }
 
-// Function to close the modal
 function closeModal() {
     const modal = document.getElementById('card-modal');
     modal.classList.add('hidden');
 }
 
-// Function to show the "Not Enough Purr" modal
 function showPurrModal() {
     const modal = document.getElementById('purr-modal');
     modal.classList.remove('hidden');
 }
 
-// Function to close the "Not Enough Purr" modal
 function closePurrModal() {
     const modal = document.getElementById('purr-modal');
     modal.classList.add('hidden');
 }
 
-// Function to show the "Not Enough Purr for Mining Upgrade" modal
 function showNotEnoughPurrModal() {
     const modal = document.getElementById('not-enough-purr-modal');
     modal.classList.remove('hidden');
 }
 
-// Function to close the "Not Enough Purr for Mining Upgrade" modal
 function closeNotEnoughPurrModal() {
     const modal = document.getElementById('not-enough-purr-modal');
     modal.classList.add('hidden');
 }
 
-// Function to show the "Successful Listing" modal
 function showSuccessListingModal() {
     const modal = document.getElementById('success-listing-modal');
     modal.classList.remove('hidden');
 }
 
-// Function to close the "Successful Listing" modal
 function closeSuccessListingModal() {
     const modal = document.getElementById('success-listing-modal');
     modal.classList.add('hidden');
 }
 
-// Function to show the "Cancel Sale" modal
 function showCancelSaleModal() {
     const modal = document.getElementById('cancel-sale-modal');
     modal.classList.remove('hidden');
 }
 
-// Function to close the "Cancel Sale" modal
 function closeCancelSaleModal() {
     const modal = document.getElementById('cancel-sale-modal');
     modal.classList.add('hidden');
 }
 
-// Function to show the "Successful Purchase" modal
 function showSuccessPurchaseModal() {
     const modal = document.getElementById('success-purchase-modal');
     modal.classList.remove('hidden');
 }
 
-// Function to close the "Successful Purchase" modal
 function closeSuccessPurchaseModal() {
     const modal = document.getElementById('success-purchase-modal');
     modal.classList.add('hidden');
 }
 
-// Function to show the "No Card Selected" modal
 function showNoCardSelectedModal() {
     const modal = document.getElementById('no-card-selected-modal');
     modal.classList.remove('hidden');
 }
 
-// Function to close the "No Card Selected" modal
 function closeNoCardSelectedModal() {
     const modal = document.getElementById('no-card-selected-modal');
     modal.classList.add('hidden');
 }
 
-// Function to show the "Invalid Price" modal
 function showInvalidPriceModal() {
     const modal = document.getElementById('invalid-price-modal');
     modal.classList.remove('hidden');
 }
 
-// Function to close the "Invalid Price" modal
 function closeInvalidPriceModal() {
     const modal = document.getElementById('invalid-price-modal');
     modal.classList.add('hidden');
 }
 
-// Function to start mining
 function startMining() {
     if (!miningActive) {
         miningActive = true;
-        miningEndTime = Date.now() + 10 * 1000; // 10 seconds
+        miningEndTime = Date.now() + 10 * 1000;
         miningButton.classList.add('disabled');
         miningText.textContent = "Mining...";
         miningTimer.classList.remove('hidden');
@@ -301,12 +315,10 @@ function startMining() {
     }
 }
 
-// Function to calculate mining rewards with efficiency bonus
 function calculateMiningReward(baseReward) {
     return baseReward * (1 + miningEfficiency / 100);
 }
 
-// Function to claim tokens
 function claimTokens() {
     if (miningActive && Date.now() >= miningEndTime) {
         miningActive = false;
@@ -322,16 +334,14 @@ function claimTokens() {
         const totalReward = calculateMiningReward(baseReward);
         animateTokenIncrement(totalReward);
 
-        // Обновляем статистику
         totalMinedPurr += totalReward;
         updateProfileStatistics();
     }
 }
 
-// Function to animate token increment
 function animateTokenIncrement(amount) {
     const targetTokens = tokens + amount;
-    const incrementDuration = 1000; // 1 second
+    const incrementDuration = 1000;
     const startTime = Date.now();
 
     const animation = setInterval(() => {
@@ -345,16 +355,14 @@ function animateTokenIncrement(amount) {
             const currentTokens = Math.floor(tokens + amount * progress);
             tokenDisplay.textContent = currentTokens.toString();
         }
-    }, 16); // Update every 16ms (~60 FPS)
+    }, 16);
 }
 
-// Function to buy a box
 function buyBox(cost) {
     if (tokens >= cost) {
         tokens -= cost;
         tokenDisplay.textContent = tokens.toString();
 
-        // Обновляем статистику
         totalSpentPurr += cost;
         totalOpenedBoxes += 1;
         updateProfileStatistics();
@@ -368,77 +376,13 @@ function buyBox(cost) {
         showPurrModal();
     }
 }
-const buyBoxWithStars = async (stars) => {
-    try {
-        // Создаем инвойс
-        const invoiceLink = await createInvoiceLink(
-            'Purchase Box', // Название товара
-            'Get a random card by purchasing this box.', // Описание
-            'box_purchase', // Уникальный идентификатор заказа
-            stars // Количество Stars (в данном случае 1)
-        );
 
-        // Открываем инвойс
-        Telegram.WebApp.openInvoice(invoiceLink, (status) => {
-            if (status === 'paid') {
-                // Оплата прошла успешно
-                showNotification('Success', 'Payment successful! Your box has been purchased.');
-                // Выдаем бокс пользователю
-                const randomCard = getRandomCard();
-                userCards.push(randomCard);
-                updateCardsList();
-                updateCardsToSell();
-                showModalWithCard(randomCard.content);
-            } else {
-                // Оплата не прошла
-                showNotification('Error', 'Payment failed. Please try again.');
-            }
-        });
-    } catch (error) {
-        console.error('Error creating invoice:', error);
-        showNotification('Error', 'Failed to create invoice. Please try again.');
-    }
-};
-const buyBoxWithStars = async (stars) => {
-    try {
-        // Создаем инвойс
-        const invoiceLink = await createInvoiceLink(
-            'Purchase Box', // Название товара
-            'Get a random card by purchasing this box.', // Описание
-            'box_purchase', // Уникальный идентификатор заказа
-            stars // Количество Stars (в данном случае 1)
-        );
-
-        // Открываем инвойс
-        Telegram.WebApp.openInvoice(invoiceLink, (status) => {
-            if (status === 'paid') {
-                // Оплата прошла успешно
-                showNotification('Success', 'Payment successful! Your box has been purchased.');
-                // Выдаем бокс пользователю
-                const randomCard = getRandomCard();
-                userCards.push(randomCard);
-                updateCardsList();
-                updateCardsToSell();
-                showModalWithCard(randomCard.content);
-            } else {
-                // Оплата не прошла
-                showNotification('Error', 'Payment failed. Please try again.');
-            }
-        });
-    } catch (error) {
-        console.error('Error creating invoice:', error);
-        showNotification('Error', 'Failed to create invoice. Please try again.');
-    }
-};
-
-// Function to get a random card
 function getRandomCard() {
     const cards = ["🃏", "🌟", "⚡", "🔥", "💎", "🍀", "🐱", "🐾", "✨"];
     const randomIndex = Math.floor(Math.random() * cards.length);
     return { type: "random", content: cards[randomIndex], owner: "user" };
 }
 
-// Function to show the modal with a specific card
 function showModalWithCard(cardContent) {
     const modalCard = document.querySelector(".card-modal-card");
     modalCard.textContent = cardContent;
@@ -447,17 +391,15 @@ function showModalWithCard(cardContent) {
     modal.classList.remove('hidden');
 }
 
-// Function to update the cards list in the sell modal
 function updateCardsToSell() {
     const cardsToSellContainer = document.getElementById('cards-to-sell');
-    cardsToSellContainer.innerHTML = ""; // Очищаем контейнер
+    cardsToSellContainer.innerHTML = "";
 
     userCards.forEach((card, index) => {
         const cardElement = document.createElement('div');
         cardElement.className = 'card-to-sell';
         cardElement.textContent = card.content;
 
-        // Если карточка выбрана для продажи, добавляем класс selected
         if (selectedCardForSale && card.content === selectedCardForSale.querySelector('.card-content').textContent) {
             cardElement.classList.add('selected');
             selectedCardIndex = index;
@@ -483,16 +425,15 @@ function updateCardsToSell() {
     });
 }
 
-// Function to sell a card
 function sellCard() {
     if (selectedCardIndex === null) {
-        showNoCardSelectedModal(); // Показываем модальное окно, если карточка не выбрана
+        showNoCardSelectedModal();
         return;
     }
 
     const price = parseInt(document.getElementById('card-price').value);
     if (isNaN(price) || price < 1 || !Number.isInteger(price)) {
-        showInvalidPriceModal(); // Показываем модальное окно, если цена некорректна
+        showInvalidPriceModal();
         return;
     }
 
@@ -506,11 +447,10 @@ function sellCard() {
     updateMarketListings();
     updateCardsList();
 
-    showSuccessListingModal(); // Показываем модальное окно об успешном выставлении
+    showSuccessListingModal();
     closeSellCardModal();
 }
 
-// Function to cancel the sale of a card
 function cancelSale(listingIndex) {
     if (listingIndex === null || listingIndex === undefined) {
         showNotification("Error", "Please select a listing to cancel.");
@@ -519,51 +459,45 @@ function cancelSale(listingIndex) {
 
     const listing = marketListings[listingIndex];
 
-    // Проверяем, что текущий пользователь — создатель объявления
     if (listing.owner !== "user") {
         showNotification("Error", "You can only cancel your own listings.");
         return;
     }
 
-    // Возвращаем карточку в инвентарь пользователя
     userCards.push(listing.card);
-
-    // Удаляем объявление из списка
     marketListings.splice(listingIndex, 1);
 
-    // Обновляем интерфейс
-    updateMarketListings(); // Обновляем список объявлений
-    updateCardsList(); // Обновляем инвентарь пользователя
-    updateCardsToSell(); // Обновляем список карточек для продажи
+    updateMarketListings();
+    updateCardsList();
+    updateCardsToSell();
 
-    showCancelSaleModal(); // Показываем модальное окно об успешном снятии
+    showCancelSaleModal();
 }
 
-// Function to update the market listings
 function updateMarketListings() {
-    marketListingsContainer.innerHTML = ""; // Очищаем контейнер
+    marketListingsContainer.innerHTML = "";
 
-    // Сортируем объявления по цене (от меньшей к большей)
     marketListings.sort((a, b) => a.price - b.price);
 
     marketListings.forEach((listing, index) => {
         const listingElement = document.createElement('div');
         listingElement.className = 'market-listing';
 
-        // Содержимое объявления
         listingElement.innerHTML = `
             <div class="card-content">${listing.card.content}</div>
             <div class="card-price">${listing.price} Purr</div>
-            <div class="seller-username">Seller: @${listing.sellerUsername}</div>
+            <div class="seller-info">
+                <span class="seller-icon">👤</span>
+                <span class="seller-username">@${listing.sellerUsername}</span>
+            </div>
             <button onclick="openPurchaseConfirmModal(${index})">Buy</button>
         `;
 
-        // Если текущий пользователь — создатель объявления, добавляем кнопку отмены
         if (listing.owner === "user") {
             const cancelButton = document.createElement('button');
             cancelButton.textContent = "Cancel Sale";
             cancelButton.className = 'cancel-sale-button';
-            cancelButton.onclick = () => cancelSale(index); // Передаём индекс объявления
+            cancelButton.onclick = () => cancelSale(index);
             listingElement.appendChild(cancelButton);
         }
 
@@ -571,7 +505,6 @@ function updateMarketListings() {
     });
 }
 
-// Function to open the purchase confirmation modal
 function openPurchaseConfirmModal(index) {
     const purchaseModal = document.getElementById('purchase-confirm-modal');
     const confirmPrice = document.getElementById('confirm-price');
@@ -585,7 +518,6 @@ function openPurchaseConfirmModal(index) {
     purchaseModal.classList.remove('hidden');
 }
 
-// Function to confirm the purchase
 function confirmPurchase() {
     if (currentPurchaseIndex !== null) {
         buyMarketCard(currentPurchaseIndex);
@@ -593,14 +525,12 @@ function confirmPurchase() {
     }
 }
 
-// Function to close the purchase confirmation modal
 function closePurchaseConfirmModal() {
     const purchaseModal = document.getElementById('purchase-confirm-modal');
     purchaseModal.classList.add('hidden');
     currentPurchaseIndex = null;
 }
 
-// Function to buy a card from the market
 function buyMarketCard(index) {
     const listing = marketListings[index];
     if (tokens < listing.price) {
@@ -621,10 +551,9 @@ function buyMarketCard(index) {
 
     updateMarketListings();
     updateCardsList();
-    showSuccessPurchaseModal(); // Показываем модальное окно об успешной покупке
+    showSuccessPurchaseModal();
 }
 
-// Function to show notifications
 function showNotification(title, message) {
     if (window.Telegram && window.Telegram.WebApp) {
         Telegram.WebApp.showAlert(`${title}: ${message}`);
@@ -633,22 +562,19 @@ function showNotification(title, message) {
     }
 }
 
-// Function to close the notification modal
 function closeNotificationModal() {
     const notificationModal = document.getElementById('notification-modal');
     notificationModal.classList.add('hidden');
 }
 
-// Function to open the sell card modal
 function openSellCardModal() {
     selectedCardIndex = null;
     updateCardsToSell();
     const modal = document.getElementById('sell-card-modal');
     modal.classList.remove('hidden');
-    modal.scrollTop = 0; // Сбрасываем прокрутку в начало
+    modal.scrollTop = 0;
 }
 
-// Function to close the sell card modal
 function closeSellCardModal() {
     const modal = document.getElementById('sell-card-modal');
     modal.classList.add('hidden');
@@ -656,22 +582,17 @@ function closeSellCardModal() {
 
 let selectedCard = null;
 
-// Функция для выбора карточки
 function selectCard(card) {
-    // Скрываем кнопку Sell на всех карточках
     document.querySelectorAll('.sell-button').forEach(button => {
         button.classList.add('hidden');
     });
 
-    // Показываем кнопку Sell на выбранной карточке
     const sellButton = card.querySelector('.sell-button');
     sellButton.classList.remove('hidden');
 
-    // Запоминаем выбранную карточку
     selectedCard = card;
 }
 
-// // Функция для скрытия кнопки Sell при клике вне карточки
 document.addEventListener('click', (event) => {
     if (selectedCard && !selectedCard.contains(event.target)) {
         const sellButton = selectedCard.querySelector('.sell-button');
@@ -682,69 +603,37 @@ document.addEventListener('click', (event) => {
     }
 });
 
-// Функция для продажи выбранной карточки
-let selectedCardForSale = null; // Переменная для хранения выбранной карточки
+let selectedCardForSale = null;
 
-// Функция для продажи выбранной карточки
 function sellSelectedCard(event) {
-    event.stopPropagation(); // Останавливаем всплытие события
+    event.stopPropagation();
 
-    // Запоминаем выбранную карточку
     selectedCardForSale = selectedCard;
 
-    // Переходим в раздел Market
     showSection('market');
-
-    // Открываем окно продажи карточки
     openSellCardModal();
 
-    // Скрываем кнопку Sell
     const sellButton = selectedCard.querySelector('.sell-button');
     if (sellButton) {
         sellButton.classList.add('hidden');
     }
 
-    // Сбрасываем выбранную карточку
     selectedCard = null;
 }
 
-// Функция для подтверждения цены и скрытия клавиатуры
 function confirmPrice() {
     const priceInput = document.getElementById('card-price');
-    priceInput.blur(); // Скрываем клавиатуру
-}
-
-// Функция для подтверждения цены
-function confirmPrice() {
-    const priceInput = document.getElementById('card-price');
-    const confirmButton = document.getElementById('confirm-price-button');
-    const editButton = document.getElementById('edit-price-button');
-
-    // Блокируем поле ввода
-    priceInput.disabled = true;
-
-    // Скрываем кнопку подтверждения и показываем кнопку редактирования
-    confirmButton.classList.add('hidden');
-    editButton.classList.remove('hidden');
-
-    // Скрываем клавиатуру
     priceInput.blur();
 }
 
-// Функция для редактирования цены
 function editPrice() {
     const priceInput = document.getElementById('card-price');
     const confirmButton = document.getElementById('confirm-price-button');
     const editButton = document.getElementById('edit-price-button');
 
-    // Разблокируем поле ввода
     priceInput.disabled = false;
-
-    // Показываем кнопку подтверждения и скрываем кнопку редактирования
     confirmButton.classList.remove('hidden');
     editButton.classList.add('hidden');
-
-    // Фокусируемся на поле ввода, чтобы появилась клавиатура
     priceInput.focus();
 }
 
@@ -762,17 +651,15 @@ function updateProfileStatistics() {
 
 // Инициализация Telegram Web App
 if (window.Telegram && window.Telegram.WebApp) {
-    Telegram.WebApp.ready(); // Инициализация WebApp
-    Telegram.WebApp.requestFullscreen(); // Открываем мини-апку в полноэкранном режиме
+    Telegram.WebApp.ready();
 
     const user = Telegram.WebApp.initDataUnsafe.user;
     if (user) {
         const welcomeMessage = `Welcome, ${user.first_name || "User"}!`;
         document.getElementById('welcome-text').textContent = welcomeMessage;
     }
-} else {
-    console.error("Telegram Web App SDK не загружен!");
 }
+
 // Привязка событий к кнопкам
 document.getElementById('mining-button').addEventListener('click', startMining);
 document.getElementById('get-card-button').addEventListener('click', getWelcomeCard);
