@@ -9,7 +9,7 @@ let currentPurchaseIndex = null;
 let totalMinedPurr = 0;
 let totalSpentPurr = 0;
 let totalOpenedBoxes = 0;
-let lastMiningTime = Date.now(); // Время пос��еднего майнинга
+let lastMiningTime = Date.now(); // Время последнего майнинга
 
 // Mining upgrades
 let miningUpgrades = [
@@ -74,7 +74,7 @@ function loadProgress() {
 
 // Обновление интерфейса после загрузки данных
 function updateUI() {
-    tokenDisplay.textContent = tokens.toString();
+    if (tokenDisplay) tokenDisplay.textContent = tokens.toString();
     updateCardsList();
     updateMarketListings();
     updateUpgradeButton();
@@ -92,7 +92,7 @@ function checkOfflineMining() {
         const offlineReward = Math.floor(timePassed / miningDuration) * calculateMiningReward(120);
         tokens += offlineReward;
         totalMinedPurr += offlineReward;
-        tokenDisplay.textContent = tokens.toString();
+        if (tokenDisplay) tokenDisplay.textContent = tokens.toString();
         saveProgress();
     }
 
@@ -119,7 +119,7 @@ function buyMarketCard(index) {
     }
 
     tokens -= listing.price;
-    tokenDisplay.textContent = tokens.toString();
+    if (tokenDisplay) tokenDisplay.textContent = tokens.toString();
 
     userCards.push(listing.card);
     marketListings.splice(index, 1);
@@ -139,7 +139,8 @@ if (window.Telegram && window.Telegram.WebApp) {
     const user = Telegram.WebApp.initDataUnsafe.user;
     if (user) {
         const welcomeMessage = `Welcome, ${user.first_name || "User"}!`;
-        document.getElementById('welcome-text').textContent = welcomeMessage;
+        const welcomeText = document.getElementById('welcome-text');
+        if (welcomeText) welcomeText.textContent = welcomeMessage;
     }
 
     // Загрузка прогресса и проверка офлайн-майнинга
@@ -148,15 +149,7 @@ if (window.Telegram && window.Telegram.WebApp) {
 }
 
 // Привязка событий к кнопкам
-
-// Остальные функции (ваш текущий код)
-function showSection(sectionId) {
-    document.querySelectorAll('.content').forEach(div => {
-        div.classList.remove('active');
-        div.classList.add('hidden');
-    });
-
-    const seledocument.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', () => {
     tokenDisplay = document.getElementById('token-count');
     miningButton = document.getElementById('mining-button');
     miningText = document.getElementById('mining-text');
@@ -229,9 +222,18 @@ function showSection(sectionId) {
     }
 });
 
-// Остальные функции остаются без измененийctedSection = document.getElementById(sectionId);
-    selectedSection.classList.remove('hidden');
-    selectedSection.classList.add('active');
+// Остальные функции
+function showSection(sectionId) {
+    document.querySelectorAll('.content').forEach(div => {
+        div.classList.remove('active');
+        div.classList.add('hidden');
+    });
+
+    const selectedSection = document.getElementById(sectionId);
+    if (selectedSection) {
+        selectedSection.classList.remove('hidden');
+        selectedSection.classList.add('active');
+    }
 
     document.querySelectorAll('.navbar button').forEach(button => {
         button.classList.remove('active');
@@ -254,15 +256,19 @@ function showMarketSection(section) {
     });
 
     const selectedSection = document.getElementById(`${section}-section`);
-    selectedSection.classList.remove('hidden');
-    selectedSection.classList.add('active');
+    if (selectedSection) {
+        selectedSection.classList.remove('hidden');
+        selectedSection.classList.add('active');
+    }
 
     document.querySelectorAll('.toggle-button').forEach(button => {
         button.classList.remove('active');
     });
 
     const activeButton = document.getElementById(`toggle-${section}`);
-    activeButton.classList.add('active');
+    if (activeButton) {
+        activeButton.classList.add('active');
+    }
 
     if (section === 'upgrades') {
         updateUpgradeButton();
@@ -271,6 +277,8 @@ function showMarketSection(section) {
 
 function updateUpgradeButton() {
     const upgradeButton = document.getElementById('upgrade-button');
+    if (!upgradeButton) return;
+
     if (currentUpgradeIndex >= miningUpgrades.length) {
         upgradeButton.textContent = "Mining Fully Upgraded!";
         upgradeButton.classList.add('disabled');
@@ -295,7 +303,7 @@ function purchaseUpgrade() {
     }
 
     tokens -= currentUpgrade.cost;
-    tokenDisplay.textContent = tokens.toString();
+    if (tokenDisplay) tokenDisplay.textContent = tokens.toString();
 
     currentUpgrade.purchased = true;
     miningEfficiency += currentUpgrade.bonus;
@@ -317,6 +325,8 @@ function getWelcomeCard() {
 
 function updateCardsList() {
     const cardsContainer = document.getElementById('cards-container');
+    if (!cardsContainer) return;
+
     cardsContainer.innerHTML = "";
 
     userCards.forEach((card, index) => {
@@ -335,110 +345,110 @@ function updateCardsList() {
 
 function showModal() {
     const modal = document.getElementById('card-modal');
-    modal.classList.remove('hidden');
+    if (modal) modal.classList.remove('hidden');
 }
 
 function closeModal() {
     const modal = document.getElementById('card-modal');
-    modal.classList.add('hidden');
+    if (modal) modal.classList.add('hidden');
 }
 
 function showPurrModal() {
     const modal = document.getElementById('purr-modal');
-    modal.classList.remove('hidden');
+    if (modal) modal.classList.remove('hidden');
 }
 
 function closePurrModal() {
     const modal = document.getElementById('purr-modal');
-    modal.classList.add('hidden');
+    if (modal) modal.classList.add('hidden');
 }
 
 function showNotEnoughPurrModal() {
     const modal = document.getElementById('not-enough-purr-modal');
-    modal.classList.remove('hidden');
+    if (modal) modal.classList.remove('hidden');
 }
 
 function closeNotEnoughPurrModal() {
     const modal = document.getElementById('not-enough-purr-modal');
-    modal.classList.add('hidden');
+    if (modal) modal.classList.add('hidden');
 }
 
 function showSuccessListingModal() {
     const modal = document.getElementById('success-listing-modal');
-    modal.classList.remove('hidden');
+    if (modal) modal.classList.remove('hidden');
 }
 
 function closeSuccessListingModal() {
     const modal = document.getElementById('success-listing-modal');
-    modal.classList.add('hidden');
+    if (modal) modal.classList.add('hidden');
 }
 
 function showCancelSaleModal() {
     const modal = document.getElementById('cancel-sale-modal');
-    modal.classList.remove('hidden');
+    if (modal) modal.classList.remove('hidden');
 }
 
 function closeCancelSaleModal() {
     const modal = document.getElementById('cancel-sale-modal');
-    modal.classList.add('hidden');
+    if (modal) modal.classList.add('hidden');
 }
 
 function showSuccessPurchaseModal() {
     const modal = document.getElementById('success-purchase-modal');
-    modal.classList.remove('hidden');
+    if (modal) modal.classList.remove('hidden');
 }
 
 function closeSuccessPurchaseModal() {
     const modal = document.getElementById('success-purchase-modal');
-    modal.classList.add('hidden');
+    if (modal) modal.classList.add('hidden');
 }
 
 function showNoCardSelectedModal() {
     const modal = document.getElementById('no-card-selected-modal');
-    modal.classList.remove('hidden');
+    if (modal) modal.classList.remove('hidden');
 }
 
 function closeNoCardSelectedModal() {
     const modal = document.getElementById('no-card-selected-modal');
-    modal.classList.add('hidden');
+    if (modal) modal.classList.add('hidden');
 }
 
 function showInvalidPriceModal() {
     const modal = document.getElementById('invalid-price-modal');
-    modal.classList.remove('hidden');
+    if (modal) modal.classList.remove('hidden');
 }
 
 function closeInvalidPriceModal() {
     const modal = document.getElementById('invalid-price-modal');
-    modal.classList.add('hidden');
+    if (modal) modal.classList.add('hidden');
 }
 
 function startMining() {
     if (!miningActive) {
         miningActive = true;
         miningEndTime = Date.now() + 10 * 1000;
-        miningButton.classList.add('disabled');
-        miningText.textContent = "Mining...";
-        miningTimer.classList.remove('hidden');
-        miningButton.onclick = null;
+        if (miningButton) miningButton.classList.add('disabled');
+        if (miningText) miningText.textContent = "Mining...";
+        if (miningTimer) miningTimer.classList.remove('hidden');
+        if (miningButton) miningButton.onclick = null;
 
         const timer = setInterval(() => {
             const timeLeft = miningEndTime - Date.now();
             if (timeLeft <= 0) {
                 clearInterval(timer);
-                miningText.textContent = "Claim";
-                miningTimer.classList.add('hidden');
-                miningTimer.textContent = "";
-                miningButton.classList.remove('disabled');
-                miningButton.onclick = claimTokens;
+                if (miningText) miningText.textContent = "Claim";
+                if (miningTimer) miningTimer.classList.add('hidden');
+                if (miningTimer) miningTimer.textContent = "";
+                if (miningButton) miningButton.classList.remove('disabled');
+                if (miningButton) miningButton.onclick = claimTokens;
 
                 const tokenAmount = document.createElement('span');
                 tokenAmount.id = 'token-amount';
                 tokenAmount.textContent = `+${calculateMiningReward(120)} Purr`;
-                miningButton.appendChild(tokenAmount);
+                if (miningButton) miningButton.appendChild(tokenAmount);
             } else {
                 const seconds = Math.floor(timeLeft / 1000);
-                miningTimer.textContent = `${seconds}s`;
+                if (miningTimer) miningTimer.textContent = `${seconds}s`;
             }
         }, 1000);
     }
@@ -451,8 +461,8 @@ function calculateMiningReward(baseReward) {
 function claimTokens() {
     if (miningActive && Date.now() >= miningEndTime) {
         miningActive = false;
-        miningText.textContent = "Mining";
-        miningButton.onclick = startMining;
+        if (miningText) miningText.textContent = "Mining";
+        if (miningButton) miningButton.onclick = startMining;
 
         const tokenAmount = document.getElementById('token-amount');
         if (tokenAmount) {
@@ -478,12 +488,12 @@ function animateTokenIncrement(amount) {
         const elapsedTime = Date.now() - startTime;
         if (elapsedTime >= incrementDuration) {
             tokens = targetTokens;
-            tokenDisplay.textContent = tokens.toString();
+            if (tokenDisplay) tokenDisplay.textContent = tokens.toString();
             clearInterval(animation);
         } else {
             const progress = elapsedTime / incrementDuration;
             const currentTokens = Math.floor(tokens + amount * progress);
-            tokenDisplay.textContent = currentTokens.toString();
+            if (tokenDisplay) tokenDisplay.textContent = currentTokens.toString();
         }
     }, 16);
 }
@@ -491,7 +501,7 @@ function animateTokenIncrement(amount) {
 function buyBox(cost) {
     if (tokens >= cost) {
         tokens -= cost;
-        tokenDisplay.textContent = tokens.toString();
+        if (tokenDisplay) tokenDisplay.textContent = tokens.toString();
 
         totalSpentPurr += cost;
         totalOpenedBoxes += 1;
@@ -516,14 +526,16 @@ function getRandomCard() {
 
 function showModalWithCard(cardContent) {
     const modalCard = document.querySelector(".card-modal-card");
-    modalCard.textContent = cardContent;
+    if (modalCard) modalCard.textContent = cardContent;
 
     const modal = document.getElementById('card-modal');
-    modal.classList.remove('hidden');
+    if (modal) modal.classList.remove('hidden');
 }
 
 function updateCardsToSell() {
     const cardsToSellContainer = document.getElementById('cards-to-sell');
+    if (!cardsToSellContainer) return;
+
     cardsToSellContainer.innerHTML = "";
 
     userCards.forEach((card, index) => {
@@ -546,17 +558,15 @@ function updateCardsToSell() {
 
             const cancelButton = document.getElementById('cancel-sale-button');
             if (marketListings.some(listing => listing.card === card && listing.owner === "user")) {
-                cancelButton.classList.remove('hidden');
+                if (cancelButton) cancelButton.classList.remove('hidden');
             } else {
-                cancelButton.classList.add('hidden');
+                if (cancelButton) cancelButton.classList.add('hidden');
             }
         });
 
         cardsToSellContainer.appendChild(cardElement);
     });
-}
-
-function sellCard() {
+}function sellCard() {
     if (selectedCardIndex === null) {
         showNoCardSelectedModal();
         return;
@@ -607,6 +617,8 @@ function cancelSale(listingIndex) {
 }
 
 function updateMarketListings() {
+    if (!marketListingsContainer) return;
+
     marketListingsContainer.innerHTML = "";
 
     marketListings.sort((a, b) => a.price - b.price);
@@ -643,11 +655,11 @@ function openPurchaseConfirmModal(index) {
     const confirmCard = document.querySelector('.confirm-card');
 
     const listing = marketListings[index];
-    confirmPrice.textContent = listing.price;
-    confirmCard.textContent = listing.card.content;
+    if (confirmPrice) confirmPrice.textContent = listing.price;
+    if (confirmCard) confirmCard.textContent = listing.card.content;
 
     currentPurchaseIndex = index;
-    purchaseModal.classList.remove('hidden');
+    if (purchaseModal) purchaseModal.classList.remove('hidden');
 }
 
 function confirmPurchase() {
@@ -659,7 +671,7 @@ function confirmPurchase() {
 
 function closePurchaseConfirmModal() {
     const purchaseModal = document.getElementById('purchase-confirm-modal');
-    purchaseModal.classList.add('hidden');
+    if (purchaseModal) purchaseModal.classList.add('hidden');
     currentPurchaseIndex = null;
 }
 
@@ -673,20 +685,22 @@ function showNotification(title, message) {
 
 function closeNotificationModal() {
     const notificationModal = document.getElementById('notification-modal');
-    notificationModal.classList.add('hidden');
+    if (notificationModal) notificationModal.classList.add('hidden');
 }
 
 function openSellCardModal() {
     selectedCardIndex = null;
     updateCardsToSell();
     const modal = document.getElementById('sell-card-modal');
-    modal.classList.remove('hidden');
-    modal.scrollTop = 0;
+    if (modal) {
+        modal.classList.remove('hidden');
+        modal.scrollTop = 0;
+    }
 }
 
 function closeSellCardModal() {
     const modal = document.getElementById('sell-card-modal');
-    modal.classList.add('hidden');
+    if (modal) modal.classList.add('hidden');
 }
 
 let selectedCard = null;
@@ -697,7 +711,7 @@ function selectCard(card) {
     });
 
     const sellButton = card.querySelector('.sell-button');
-    sellButton.classList.remove('hidden');
+    if (sellButton) sellButton.classList.remove('hidden');
 
     selectedCard = card;
 }
@@ -732,7 +746,7 @@ function sellSelectedCard(event) {
 
 function confirmPrice() {
     const priceInput = document.getElementById('card-price');
-    priceInput.blur();
+    if (priceInput) priceInput.blur();
 }
 
 function editPrice() {
@@ -740,20 +754,24 @@ function editPrice() {
     const confirmButton = document.getElementById('confirm-price-button');
     const editButton = document.getElementById('edit-price-button');
 
-    priceInput.disabled = false;
-    confirmButton.classList.remove('hidden');
-    editButton.classList.add('hidden');
-    priceInput.focus();
+    if (priceInput && confirmButton && editButton) {
+        priceInput.disabled = false;
+        confirmButton.classList.remove('hidden');
+        editButton.classList.add('hidden');
+        priceInput.focus();
+    }
 }
 
 function updateProfileStatistics() {
     const profileSection = document.getElementById('profile');
-    profileSection.innerHTML = `
-        <h1>Profile</h1>
-        <div class="statistics">
-            <p>Total Mined Purr: ${totalMinedPurr}</p>
-            <p>Total Spent Purr: ${totalSpentPurr}</p>
-            <p>Total Opened Boxes: ${totalOpenedBoxes}</p>
-        </div>
-    `;
-}
+    if (profileSection) {
+        profileSection.innerHTML = `
+            <h1>Profile</h1>
+            <div class="statistics">
+                <p>Total Mined Purr: ${totalMinedPurr}</p>
+                <p>Total Spent Purr: ${totalSpentPurr}</p>
+                <p>Total Opened Boxes: ${totalOpenedBoxes}</p>
+            </div>
+        `;
+    }
+        }
