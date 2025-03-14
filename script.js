@@ -31,28 +31,43 @@ const marketListingsContainer = document.getElementById('market-listings-contain
 
 // Функция для создания инвойса
 const createInvoiceLink = async (title, description, payload, price) => {
-    const response = await fetch(`https://api.telegram.org/bot7879732935:AAHpo1NIdQJXUMVCuVXYupEGsqo6-PY0Wjg/createInvoiceLink`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-            title: title,
-            description: description,
-            payload: payload,
-            provider_token: '', // Не требуется для Telegram Stars
-            currency: 'XTR', // Валюта Telegram Stars
-            prices: [{ label: '1 Box', amount: price * 1 }], // 1 Star = 100
-        }),
-    });
-    const data = await response.json();
-    return data.result;
+    try {
+        const response = await fetch(`https://api.telegram.org/bot7879732935:AAHpo1NIdQJXUMVCuVXYupEGsqo6-PY0Wjg/createInvoiceLink`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                title: title,
+                description: description,
+                payload: payload,
+                provider_token: '', // Не требуется для Telegram Stars
+                currency: 'XTR', // Валюта Telegram Stars
+                prices: [{ label: '1 Box', amount: price * 1 }], // 1 Star = 100
+            }),
+            signal: AbortSignal.timeout(5000), // Тайм-аут 5 секунд
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        if (!data.ok) {
+            throw new Error(`API error: ${data.description}`);
+        }
+
+        return data.result;
+    } catch (error) {
+        console.error('Error creating invoice:', error);
+        showNotification('Error', 'Failed to create invoice. Please try again.');
+        return null;
+    }
 };
 
 // Функция для покупки бокса за Stars
 const buyBoxWithStars = async (stars) => {
     try {
-        // Создаем инвойс
         const invoiceLink = await createInvoiceLink(
             'Purchase Box', // Название товара
             'Get a random card by purchasing this box.', // Описание
@@ -60,19 +75,21 @@ const buyBoxWithStars = async (stars) => {
             stars // Количество Stars (в данном случае 1)
         );
 
-        // Открываем инвойс
+        if (!invoiceLink) {
+            showNotification('Error', 'Failed to create invoice. Please try again.');
+            return;
+        }
+
         Telegram.WebApp.openInvoice(invoiceLink, (status) => {
+            console.log('Invoice status:', status);
             if (status === 'paid') {
-                // Оплата прошла успешно
                 showNotification('Success', 'Payment successful! Your box has been purchased.');
-                // Выдаем бокс пользователю
                 const randomCard = getRandomCard();
                 userCards.push(randomCard);
                 updateCardsList();
                 updateCardsToSell();
                 showModalWithCard(randomCard.content);
             } else {
-                // Оплата не прошла
                 showNotification('Error', 'Payment failed. Please try again.');
             }
         });
@@ -85,6 +102,7 @@ const buyBoxWithStars = async (stars) => {
 // Обработчик события invoiceClosed
 if (window.Telegram && window.Telegram.WebApp) {
     Telegram.WebApp.onEvent('invoiceClosed', (event) => {
+        console.log('Invoice closed with status:', event.status);
         if (event.status === 'paid') {
             showNotification('Success', 'Payment successful! Your box has been purchased.');
         } else {
