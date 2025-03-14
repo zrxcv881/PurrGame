@@ -31,7 +31,7 @@ const marketListingsContainer = document.getElementById('market-listings-contain
 
 // Функция для создания инвойса
 const createInvoiceLink = async (title, description, payload, price) => {
-    const response = await fetch(`https://api.telegram.org/bot<YOUR_BOT_TOKEN>/createInvoiceLink`, {
+    const response = await fetch(`https://api.telegram.org/bot<7879732935:AAHpo1NIdQJXUMVCuVXYupEGsqo6-PY0Wjg>/createInvoiceLink`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
