@@ -9,6 +9,7 @@ let currentPurchaseIndex = null;
 let totalMinedPurr = 0;
 let totalSpentPurr = 0;
 let totalOpenedBoxes = 0;
+let lastMiningTime = Date.now(); // Время последнего майнинга
 
 // Mining upgrades
 let miningUpgrades = [
@@ -34,7 +35,8 @@ function saveProgress() {
         currentUpgradeIndex,
         totalMinedPurr,
         totalSpentPurr,
-        totalOpenedBoxes
+        totalOpenedBoxes,
+        lastMiningTime
     };
 
     Telegram.WebApp.CloudStorage.setItem('progress', JSON.stringify(progress), (error, success) => {
@@ -61,6 +63,7 @@ function loadProgress() {
             totalMinedPurr = progress.totalMinedPurr || 0;
             totalSpentPurr = progress.totalSpentPurr || 0;
             totalOpenedBoxes = progress.totalOpenedBoxes || 0;
+            lastMiningTime = progress.lastMiningTime || Date.now();
 
             updateUI();
         }
@@ -75,92 +78,140 @@ function updateUI() {
     updateUpgradeButton();
 }
 
-// ================== НОВЫЙ ФУНКЦИОНАЛ: ОПЛАТА ЗА 1 TELEGRAM STAR ==================
+// ================== Офлайн-майнинг ==================
 
-// Функция для создания инвойса
-const createInvoiceLink = async (title, description, payload, price) => {
+// Проверка офлайн-майнинга
+function checkOfflineMining() {
+    const currentTime = Date.now();
+    const timePassed = currentTime - lastMiningTime; // Время в миллисекундах
+    const miningDuration = 10 * 1000; // 10 секунд в миллисекундах
+
+    if (timePassed > miningDuration) {
+        const offlineReward = Math.floor(timePassed / miningDuration) * calculateMiningReward(120);
+        tokens += offlineReward;
+        totalMinedPurr += offlineReward;
+        tokenDisplay.textContent = tokens.toString();
+        saveProgress();
+    }
+
+    lastMiningTime = currentTime;
+}
+
+// ================== Общедоступный рынок ==================
+
+// Получить список карточек с рынка
+async function fetchMarketListings() {
     try {
-        const response = await fetch(`https://api.telegram.org/bot7879732935:AAHpo1NIdQJXUMVCuVXYupEGsqo6-PY0Wjg/createInvoiceLink`, {
+        const response = await fetch('https://your-server.com/api/market');
+        const data = await response.json();
+        marketListings = data;
+        updateMarketListings();
+    } catch (error) {
+        console.error('Error fetching market listings:', error);
+    }
+}
+
+// Добавить карточку на рынок
+async function addCardToMarket(card, price) {
+    try {
+        const response = await fetch('https://your-server.com/api/market', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-                title: title,
-                description: description,
-                payload: payload,
-                provider_token: '', // Не требуется для Telegram Stars
-                currency: 'XTR', // Валюта Telegram Stars
-                prices: [{ label: '1 Box', amount: price * 1 }], // 1 Star = 100
+                card,
+                price,
+                sellerUsername: Telegram.WebApp.initDataUnsafe.user?.username || "Anonymous"
             }),
-            signal: AbortSignal.timeout(5000), // Тайм-аут 5 секунд
         });
 
         if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
+            throw new Error('Failed to add card to market');
         }
 
         const data = await response.json();
-        if (!data.ok) {
-            throw new Error(`API error: ${data.description}`);
-        }
-
-        return data.result;
+        marketListings.unshift(data);
+        updateMarketListings();
     } catch (error) {
-        console.error('Error creating invoice:', error);
-        showNotification('Error', 'Failed to create invoice. Please try again.');
-        return null;
+        console.error('Error adding card to market:', error);
     }
-};
-
-// Функция для покупки бокса за Stars
-const buyBoxWithStars = async (stars) => {
-    try {
-        const invoiceLink = await createInvoiceLink(
-            'Purchase Box', // Название товара
-            'Get a random card by purchasing this box.', // Описание
-            'box_purchase', // Уникальный идентификатор заказа
-            stars // Количество Stars (в данном случае 1)
-        );
-
-        if (!invoiceLink) {
-            showNotification('Error', 'Failed to create invoice. Please try again.');
-            return;
-        }
-
-        Telegram.WebApp.openInvoice(invoiceLink, (status) => {
-            console.log('Invoice status:', status);
-            if (status === 'paid') {
-                showNotification('Success', 'Payment successful! Your box has been purchased.');
-                const randomCard = getRandomCard();
-                userCards.push(randomCard);
-                updateCardsList();
-                updateCardsToSell();
-                showModalWithCard(randomCard.content);
-                saveProgress(); // Сохраняем прогресс
-            } else {
-                showNotification('Error', 'Payment failed. Please try again.');
-            }
-        });
-    } catch (error) {
-        console.error('Error creating invoice:', error);
-        showNotification('Error', 'Failed to create invoice. Please try again.');
-    }
-};
-
-// Обработчик события invoiceClosed
-if (window.Telegram && window.Telegram.WebApp) {
-    Telegram.WebApp.onEvent('invoiceClosed', (event) => {
-        console.log('Invoice closed with status:', event.status);
-        if (event.status === 'paid') {
-            showNotification('Success', 'Payment successful! Your box has been purchased.');
-        } else {
-            showNotification('Error', 'Payment failed. Please try again.');
-        }
-    });
 }
 
-// ================== КОНЕЦ НОВОГО ФУНКЦИОНАЛА ==================
+// Купить карточку с рынка
+async function buyMarketCard(index) {
+    const listing = marketListings[index];
+    if (tokens < listing.price) {
+        showNotification("Error", "Not enough Purr to buy this card.");
+        return;
+    }
+
+    try {
+        const response = await fetch(`https://your-server.com/api/market/${listing.id}`, {
+            method: 'DELETE',
+        });
+
+        if (!response.ok) {
+            throw new Error('Failed to buy card');
+        }
+
+        tokens -= listing.price;
+        tokenDisplay.textContent = tokens.toString();
+
+        userCards.push(listing.card);
+        marketListings.splice(index, 1);
+
+        updateMarketListings();
+        updateCardsList();
+        showSuccessPurchaseModal();
+        saveProgress();
+    } catch (error) {
+        console.error('Error buying card:', error);
+    }
+}
+
+// ================== Остальные функции ==================
+
+// Инициализация Telegram Web App
+if (window.Telegram && window.Telegram.WebApp) {
+    Telegram.WebApp.ready();
+
+    const user = Telegram.WebApp.initDataUnsafe.user;
+    if (user) {
+        const welcomeMessage = `Welcome, ${user.first_name || "User"}!`;
+        document.getElementById('welcome-text').textContent = welcomeMessage;
+    }
+
+    // Загрузка прогресса и проверка офлайн-майнинга
+    loadProgress();
+    checkOfflineMining();
+
+    // Загрузка списка карточек с рынка
+    fetchMarketListings();
+}
+
+// Привязка событий к кнопкам
+document.addEventListener('DOMContentLoaded', () => {
+    tokenDisplay = document.getElementById('token-count');
+    miningButton = document.getElementById('mining-button');
+    miningText = document.getElementById('mining-text');
+    miningTimer = document.getElementById('mining-timer');
+    getCardButton = document.getElementById('get-card-button');
+    marketListingsContainer = document.getElementById('market-listings-container');
+
+    if (miningButton) {
+        miningButton.addEventListener('click', startMining);
+    }
+    if (getCardButton) {
+        getCardButton.addEventListener('click', getWelcomeCard);
+    }
+    if (document.getElementById('toggle-boxes')) {
+        document.getElementById('toggle-boxes').addEventListener('click', () => showMarketSection('boxes'));
+    }
+    if (document.getElementById('toggle-upgrades')) {
+        document.getElementById('toggle-upgrades').addEventListener('click', () => showMarketSection('upgrades'));
+    }
+});
 
 // Остальные функции (ваш текущий код)
 function showSection(sectionId) {
@@ -243,7 +294,7 @@ function purchaseUpgrade() {
     showNotification("Success", `Mining efficiency increased by ${currentUpgrade.bonus}%!`);
     currentUpgradeIndex++;
     updateUpgradeButton();
-    saveProgress(); // Сохраняем прогресс
+    saveProgress();
 }
 
 function getWelcomeCard() {
@@ -252,7 +303,7 @@ function getWelcomeCard() {
     updateCardsList();
     updateCardsToSell();
     showModal();
-    saveProgress(); // Сохраняем прогресс
+    saveProgress();
 }
 
 function updateCardsList() {
@@ -405,7 +456,7 @@ function claimTokens() {
 
         totalMinedPurr += totalReward;
         updateProfileStatistics();
-        saveProgress(); // Сохраняем прогресс
+        saveProgress();
     }
 }
 
@@ -442,7 +493,7 @@ function buyBox(cost) {
         updateCardsList();
         updateCardsToSell();
         showModalWithCard(randomCard.content);
-        saveProgress(); // Сохраняем прогресс
+        saveProgress();
     } else {
         showPurrModal();
     }
@@ -511,8 +562,7 @@ function sellCard() {
     const cardToSell = userCards[selectedCardIndex];
     userCards.splice(selectedCardIndex, 1);
 
-    const sellerUsername = Telegram.WebApp.initDataUnsafe.user?.username || "Anonymous";
-    marketListings.unshift({ card: cardToSell, price: price, owner: "user", sellerUsername: sellerUsername });
+    addCardToMarket(cardToSell, price); // Добавляем карточку на рынок
 
     updateCardsToSell();
     updateMarketListings();
@@ -520,7 +570,7 @@ function sellCard() {
 
     showSuccessListingModal();
     closeSellCardModal();
-    saveProgress(); // Сохраняем прогресс
+    saveProgress();
 }
 
 function cancelSale(listingIndex) {
@@ -544,7 +594,7 @@ function cancelSale(listingIndex) {
     updateCardsToSell();
 
     showCancelSaleModal();
-    saveProgress(); // Сохраняем прогресс
+    saveProgress();
 }
 
 function updateMarketListings() {
@@ -602,30 +652,6 @@ function closePurchaseConfirmModal() {
     const purchaseModal = document.getElementById('purchase-confirm-modal');
     purchaseModal.classList.add('hidden');
     currentPurchaseIndex = null;
-}
-
-function buyMarketCard(index) {
-    const listing = marketListings[index];
-    if (tokens < listing.price) {
-        showNotification("Error", "Not enough Purr to buy this card.");
-        return;
-    }
-
-    tokens -= listing.price;
-    tokenDisplay.textContent = tokens.toString();
-
-    if (listing.owner === "user") {
-        tokens += listing.price;
-        tokenDisplay.textContent = tokens.toString();
-    }
-
-    userCards.push(listing.card);
-    marketListings.splice(index, 1);
-
-    updateMarketListings();
-    updateCardsList();
-    showSuccessPurchaseModal();
-    saveProgress(); // Сохраняем прогресс
 }
 
 function showNotification(title, message) {
@@ -722,40 +748,3 @@ function updateProfileStatistics() {
         </div>
     `;
 }
-
-// Инициализация Telegram Web App
-if (window.Telegram && window.Telegram.WebApp) {
-    Telegram.WebApp.ready();
-
-    const user = Telegram.WebApp.initDataUnsafe.user;
-    if (user) {
-        const welcomeMessage = `Welcome, ${user.first_name || "User"}!`;
-        document.getElementById('welcome-text').textContent = welcomeMessage;
-    }
-
-    // Загрузка прогресса при запуске
-    loadProgress();
-}
-
-// Привязка событий к кнопкам
-document.addEventListener('DOMContentLoaded', () => {
-    tokenDisplay = document.getElementById('token-count');
-    miningButton = document.getElementById('mining-button');
-    miningText = document.getElementById('mining-text');
-    miningTimer = document.getElementById('mining-timer');
-    getCardButton = document.getElementById('get-card-button');
-    marketListingsContainer = document.getElementById('market-listings-container');
-
-    if (miningButton) {
-        miningButton.addEventListener('click', startMining);
-    }
-    if (getCardButton) {
-        getCardButton.addEventListener('click', getWelcomeCard);
-    }
-    if (document.getElementById('toggle-boxes')) {
-        document.getElementById('toggle-boxes').addEventListener('click', () => showMarketSection('boxes'));
-    }
-    if (document.getElementById('toggle-upgrades')) {
-        document.getElementById('toggle-upgrades').addEventListener('click', () => showMarketSection('upgrades'));
-    }
-});
