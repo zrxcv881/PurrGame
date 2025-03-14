@@ -36,8 +36,7 @@ function saveProgress() {
         totalMinedPurr,
         totalSpentPurr,
         totalOpenedBoxes,
-        lastMiningTime,
-        marketListings
+        lastMiningTime
     };
 
     Telegram.WebApp.CloudStorage.setItem('progress', JSON.stringify(progress), (error, success) => {
@@ -46,7 +45,7 @@ function saveProgress() {
         } else {
             console.log('Progress saved successfully:', success);
         }
-    };
+    });
 }
 
 // Загрузка прогресса
@@ -65,7 +64,6 @@ function loadProgress() {
             totalSpentPurr = progress.totalSpentPurr || 0;
             totalOpenedBoxes = progress.totalOpenedBoxes || 0;
             lastMiningTime = progress.lastMiningTime || Date.now();
-            marketListings = progress.marketListings || [];
 
             updateUI();
         }
@@ -74,7 +72,7 @@ function loadProgress() {
 
 // Обновление интерфейса после загрузки данных
 function updateUI() {
-    if (tokenDisplay) tokenDisplay.textContent = tokens.toString();
+    tokenDisplay.textContent = tokens.toString();
     updateCardsList();
     updateMarketListings();
     updateUpgradeButton();
@@ -92,42 +90,84 @@ function checkOfflineMining() {
         const offlineReward = Math.floor(timePassed / miningDuration) * calculateMiningReward(120);
         tokens += offlineReward;
         totalMinedPurr += offlineReward;
-        if (tokenDisplay) tokenDisplay.textContent = tokens.toString();
+        tokenDisplay.textContent = tokens.toString();
         saveProgress();
     }
 
     lastMiningTime = currentTime;
 }
 
-// ================== Рынок ==================
+// ================== Общедоступный рынок ==================
+
+// Получить список карточек с рынка
+async function fetchMarketListings() {
+    try {
+        const response = await fetch('https://your-server.com/api/market');
+        const data = await response.json();
+        marketListings = data;
+        updateMarketListings();
+    } catch (error) {
+        console.error('Error fetching market listings:', error);
+    }
+}
 
 // Добавить карточку на рынок
-function addCardToMarket(card, price) {
-    const sellerUsername = Telegram.WebApp.initDataUnsafe.user?.username || "Anonymous";
-    const newListing = { card, price, sellerUsername };
-    marketListings.unshift(newListing);
-    saveProgress();
-    updateMarketListings();
+async function addCardToMarket(card, price) {
+    try {
+        const response = await fetch('https://your-server.com/api/market', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                card,
+                price,
+                sellerUsername: Telegram.WebApp.initDataUnsafe.user?.username || "Anonymous"
+            }),
+        });
+
+        if (!response.ok) {
+            throw new Error('Failed to add card to market');
+        }
+
+        const data = await response.json();
+        marketListings.unshift(data);
+        updateMarketListings();
+    } catch (error) {
+        console.error('Error adding card to market:', error);
+    }
 }
 
 // Купить карточку с рынка
-function buyMarketCard(index) {
+async function buyMarketCard(index) {
     const listing = marketListings[index];
     if (tokens < listing.price) {
         showNotification("Error", "Not enough Purr to buy this card.");
         return;
     }
 
-    tokens -= listing.price;
-    if (tokenDisplay) tokenDisplay.textContent = tokens.toString();
+    try {
+        const response = await fetch(`https://your-server.com/api/market/${listing.id}`, {
+            method: 'DELETE',
+        });
 
-    userCards.push(listing.card);
-    marketListings.splice(index, 1);
+        if (!response.ok) {
+            throw new Error('Failed to buy card');
+        }
 
-    updateMarketListings();
-    updateCardsList();
-    showSuccessPurchaseModal();
-    saveProgress();
+        tokens -= listing.price;
+        tokenDisplay.textContent = tokens.toString();
+
+        userCards.push(listing.card);
+        marketListings.splice(index, 1);
+
+        updateMarketListings();
+        updateCardsList();
+        showSuccessPurchaseModal();
+        saveProgress();
+    } catch (error) {
+        console.error('Error buying card:', error);
+    }
 }
 
 // ================== Остальные функции ==================
@@ -139,13 +179,15 @@ if (window.Telegram && window.Telegram.WebApp) {
     const user = Telegram.WebApp.initDataUnsafe.user;
     if (user) {
         const welcomeMessage = `Welcome, ${user.first_name || "User"}!`;
-        const welcomeText = document.getElementById('welcome-text');
-        if (welcomeText) welcomeText.textContent = welcomeMessage;
+        document.getElementById('welcome-text').textContent = welcomeMessage;
     }
 
     // Загрузка прогресса и проверка офлайн-майнинга
     loadProgress();
     checkOfflineMining();
+
+    // Загрузка списка карточек с рынка
+    fetchMarketListings();
 }
 
 // Привязка событий к кнопкам
@@ -169,60 +211,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (document.getElementById('toggle-upgrades')) {
         document.getElementById('toggle-upgrades').addEventListener('click', () => showMarketSection('upgrades'));
     }
-    if (document.getElementById('upgrade-button')) {
-        document.getElementById('upgrade-button').addEventListener('click', purchaseUpgrade);
-    }
-    if (document.getElementById('sell-card-button')) {
-        document.getElementById('sell-card-button').addEventListener('click', openSellCardModal);
-    }
-    if (document.getElementById('close-modal-button')) {
-        document.getElementById('close-modal-button').addEventListener('click', closeModal);
-    }
-    if (document.getElementById('close-purr-modal-button')) {
-        document.getElementById('close-purr-modal-button').addEventListener('click', closePurrModal);
-    }
-    if (document.getElementById('close-not-enough-purr-modal-button')) {
-        document.getElementById('close-not-enough-purr-modal-button').addEventListener('click', closeNotEnoughPurrModal);
-    }
-    if (document.getElementById('close-success-listing-modal-button')) {
-        document.getElementById('close-success-listing-modal-button').addEventListener('click', closeSuccessListingModal);
-    }
-    if (document.getElementById('close-cancel-sale-modal-button')) {
-        document.getElementById('close-cancel-sale-modal-button').addEventListener('click', closeCancelSaleModal);
-    }
-    if (document.getElementById('close-success-purchase-modal-button')) {
-        document.getElementById('close-success-purchase-modal-button').addEventListener('click', closeSuccessPurchaseModal);
-    }
-    if (document.getElementById('close-no-card-selected-modal-button')) {
-        document.getElementById('close-no-card-selected-modal-button').addEventListener('click', closeNoCardSelectedModal);
-    }
-    if (document.getElementById('close-invalid-price-modal-button')) {
-        document.getElementById('close-invalid-price-modal-button').addEventListener('click', closeInvalidPriceModal);
-    }
-    if (document.getElementById('confirm-price-button')) {
-        document.getElementById('confirm-price-button').addEventListener('click', confirmPrice);
-    }
-    if (document.getElementById('edit-price-button')) {
-        document.getElementById('edit-price-button').addEventListener('click', editPrice);
-    }
-    if (document.getElementById('sell-card-confirm-button')) {
-        document.getElementById('sell-card-confirm-button').addEventListener('click', sellCard);
-    }
-    if (document.getElementById('close-sell-card-modal-button')) {
-        document.getElementById('close-sell-card-modal-button').addEventListener('click', closeSellCardModal);
-    }
-    if (document.getElementById('confirm-purchase-button')) {
-        document.getElementById('confirm-purchase-button').addEventListener('click', confirmPurchase);
-    }
-    if (document.getElementById('close-purchase-confirm-modal-button')) {
-        document.getElementById('close-purchase-confirm-modal-button').addEventListener('click', closePurchaseConfirmModal);
-    }
-    if (document.getElementById('cancel-sale-button')) {
-        document.getElementById('cancel-sale-button').addEventListener('click', () => cancelSale(selectedCardIndex));
-    }
 });
 
-// Остальные функции
+// Остальные функции (ваш текущий код)
 function showSection(sectionId) {
     document.querySelectorAll('.content').forEach(div => {
         div.classList.remove('active');
@@ -230,10 +221,8 @@ function showSection(sectionId) {
     });
 
     const selectedSection = document.getElementById(sectionId);
-    if (selectedSection) {
-        selectedSection.classList.remove('hidden');
-        selectedSection.classList.add('active');
-    }
+    selectedSection.classList.remove('hidden');
+    selectedSection.classList.add('active');
 
     document.querySelectorAll('.navbar button').forEach(button => {
         button.classList.remove('active');
@@ -256,19 +245,15 @@ function showMarketSection(section) {
     });
 
     const selectedSection = document.getElementById(`${section}-section`);
-    if (selectedSection) {
-        selectedSection.classList.remove('hidden');
-        selectedSection.classList.add('active');
-    }
+    selectedSection.classList.remove('hidden');
+    selectedSection.classList.add('active');
 
     document.querySelectorAll('.toggle-button').forEach(button => {
         button.classList.remove('active');
     });
 
     const activeButton = document.getElementById(`toggle-${section}`);
-    if (activeButton) {
-        activeButton.classList.add('active');
-    }
+    activeButton.classList.add('active');
 
     if (section === 'upgrades') {
         updateUpgradeButton();
@@ -277,8 +262,6 @@ function showMarketSection(section) {
 
 function updateUpgradeButton() {
     const upgradeButton = document.getElementById('upgrade-button');
-    if (!upgradeButton) return;
-
     if (currentUpgradeIndex >= miningUpgrades.length) {
         upgradeButton.textContent = "Mining Fully Upgraded!";
         upgradeButton.classList.add('disabled');
@@ -303,7 +286,7 @@ function purchaseUpgrade() {
     }
 
     tokens -= currentUpgrade.cost;
-    if (tokenDisplay) tokenDisplay.textContent = tokens.toString();
+    tokenDisplay.textContent = tokens.toString();
 
     currentUpgrade.purchased = true;
     miningEfficiency += currentUpgrade.bonus;
@@ -325,8 +308,6 @@ function getWelcomeCard() {
 
 function updateCardsList() {
     const cardsContainer = document.getElementById('cards-container');
-    if (!cardsContainer) return;
-
     cardsContainer.innerHTML = "";
 
     userCards.forEach((card, index) => {
@@ -345,110 +326,110 @@ function updateCardsList() {
 
 function showModal() {
     const modal = document.getElementById('card-modal');
-    if (modal) modal.classList.remove('hidden');
+    modal.classList.remove('hidden');
 }
 
 function closeModal() {
     const modal = document.getElementById('card-modal');
-    if (modal) modal.classList.add('hidden');
+    modal.classList.add('hidden');
 }
 
 function showPurrModal() {
     const modal = document.getElementById('purr-modal');
-    if (modal) modal.classList.remove('hidden');
+    modal.classList.remove('hidden');
 }
 
 function closePurrModal() {
     const modal = document.getElementById('purr-modal');
-    if (modal) modal.classList.add('hidden');
+    modal.classList.add('hidden');
 }
 
 function showNotEnoughPurrModal() {
     const modal = document.getElementById('not-enough-purr-modal');
-    if (modal) modal.classList.remove('hidden');
+    modal.classList.remove('hidden');
 }
 
 function closeNotEnoughPurrModal() {
     const modal = document.getElementById('not-enough-purr-modal');
-    if (modal) modal.classList.add('hidden');
+    modal.classList.add('hidden');
 }
 
 function showSuccessListingModal() {
     const modal = document.getElementById('success-listing-modal');
-    if (modal) modal.classList.remove('hidden');
+    modal.classList.remove('hidden');
 }
 
 function closeSuccessListingModal() {
     const modal = document.getElementById('success-listing-modal');
-    if (modal) modal.classList.add('hidden');
+    modal.classList.add('hidden');
 }
 
 function showCancelSaleModal() {
     const modal = document.getElementById('cancel-sale-modal');
-    if (modal) modal.classList.remove('hidden');
+    modal.classList.remove('hidden');
 }
 
 function closeCancelSaleModal() {
     const modal = document.getElementById('cancel-sale-modal');
-    if (modal) modal.classList.add('hidden');
+    modal.classList.add('hidden');
 }
 
 function showSuccessPurchaseModal() {
     const modal = document.getElementById('success-purchase-modal');
-    if (modal) modal.classList.remove('hidden');
+    modal.classList.remove('hidden');
 }
 
 function closeSuccessPurchaseModal() {
     const modal = document.getElementById('success-purchase-modal');
-    if (modal) modal.classList.add('hidden');
+    modal.classList.add('hidden');
 }
 
 function showNoCardSelectedModal() {
     const modal = document.getElementById('no-card-selected-modal');
-    if (modal) modal.classList.remove('hidden');
+    modal.classList.remove('hidden');
 }
 
 function closeNoCardSelectedModal() {
     const modal = document.getElementById('no-card-selected-modal');
-    if (modal) modal.classList.add('hidden');
+    modal.classList.add('hidden');
 }
 
 function showInvalidPriceModal() {
     const modal = document.getElementById('invalid-price-modal');
-    if (modal) modal.classList.remove('hidden');
+    modal.classList.remove('hidden');
 }
 
 function closeInvalidPriceModal() {
     const modal = document.getElementById('invalid-price-modal');
-    if (modal) modal.classList.add('hidden');
+    modal.classList.add('hidden');
 }
 
 function startMining() {
     if (!miningActive) {
         miningActive = true;
         miningEndTime = Date.now() + 10 * 1000;
-        if (miningButton) miningButton.classList.add('disabled');
-        if (miningText) miningText.textContent = "Mining...";
-        if (miningTimer) miningTimer.classList.remove('hidden');
-        if (miningButton) miningButton.onclick = null;
+        miningButton.classList.add('disabled');
+        miningText.textContent = "Mining...";
+        miningTimer.classList.remove('hidden');
+        miningButton.onclick = null;
 
         const timer = setInterval(() => {
             const timeLeft = miningEndTime - Date.now();
             if (timeLeft <= 0) {
                 clearInterval(timer);
-                if (miningText) miningText.textContent = "Claim";
-                if (miningTimer) miningTimer.classList.add('hidden');
-                if (miningTimer) miningTimer.textContent = "";
-                if (miningButton) miningButton.classList.remove('disabled');
-                if (miningButton) miningButton.onclick = claimTokens;
+                miningText.textContent = "Claim";
+                miningTimer.classList.add('hidden');
+                miningTimer.textContent = "";
+                miningButton.classList.remove('disabled');
+                miningButton.onclick = claimTokens;
 
                 const tokenAmount = document.createElement('span');
                 tokenAmount.id = 'token-amount';
                 tokenAmount.textContent = `+${calculateMiningReward(120)} Purr`;
-                if (miningButton) miningButton.appendChild(tokenAmount);
+                miningButton.appendChild(tokenAmount);
             } else {
                 const seconds = Math.floor(timeLeft / 1000);
-                if (miningTimer) miningTimer.textContent = `${seconds}s`;
+                miningTimer.textContent = `${seconds}s`;
             }
         }, 1000);
     }
@@ -461,8 +442,8 @@ function calculateMiningReward(baseReward) {
 function claimTokens() {
     if (miningActive && Date.now() >= miningEndTime) {
         miningActive = false;
-        if (miningText) miningText.textContent = "Mining";
-        if (miningButton) miningButton.onclick = startMining;
+        miningText.textContent = "Mining";
+        miningButton.onclick = startMining;
 
         const tokenAmount = document.getElementById('token-amount');
         if (tokenAmount) {
@@ -488,12 +469,12 @@ function animateTokenIncrement(amount) {
         const elapsedTime = Date.now() - startTime;
         if (elapsedTime >= incrementDuration) {
             tokens = targetTokens;
-            if (tokenDisplay) tokenDisplay.textContent = tokens.toString();
+            tokenDisplay.textContent = tokens.toString();
             clearInterval(animation);
         } else {
             const progress = elapsedTime / incrementDuration;
             const currentTokens = Math.floor(tokens + amount * progress);
-            if (tokenDisplay) tokenDisplay.textContent = currentTokens.toString();
+            tokenDisplay.textContent = currentTokens.toString();
         }
     }, 16);
 }
@@ -501,7 +482,7 @@ function animateTokenIncrement(amount) {
 function buyBox(cost) {
     if (tokens >= cost) {
         tokens -= cost;
-        if (tokenDisplay) tokenDisplay.textContent = tokens.toString();
+        tokenDisplay.textContent = tokens.toString();
 
         totalSpentPurr += cost;
         totalOpenedBoxes += 1;
@@ -526,16 +507,14 @@ function getRandomCard() {
 
 function showModalWithCard(cardContent) {
     const modalCard = document.querySelector(".card-modal-card");
-    if (modalCard) modalCard.textContent = cardContent;
+    modalCard.textContent = cardContent;
 
     const modal = document.getElementById('card-modal');
-    if (modal) modal.classList.remove('hidden');
+    modal.classList.remove('hidden');
 }
 
 function updateCardsToSell() {
     const cardsToSellContainer = document.getElementById('cards-to-sell');
-    if (!cardsToSellContainer) return;
-
     cardsToSellContainer.innerHTML = "";
 
     userCards.forEach((card, index) => {
@@ -558,15 +537,17 @@ function updateCardsToSell() {
 
             const cancelButton = document.getElementById('cancel-sale-button');
             if (marketListings.some(listing => listing.card === card && listing.owner === "user")) {
-                if (cancelButton) cancelButton.classList.remove('hidden');
+                cancelButton.classList.remove('hidden');
             } else {
-                if (cancelButton) cancelButton.classList.add('hidden');
+                cancelButton.classList.add('hidden');
             }
         });
 
         cardsToSellContainer.appendChild(cardElement);
     });
-}function sellCard() {
+}
+
+function sellCard() {
     if (selectedCardIndex === null) {
         showNoCardSelectedModal();
         return;
@@ -617,8 +598,6 @@ function cancelSale(listingIndex) {
 }
 
 function updateMarketListings() {
-    if (!marketListingsContainer) return;
-
     marketListingsContainer.innerHTML = "";
 
     marketListings.sort((a, b) => a.price - b.price);
@@ -655,11 +634,11 @@ function openPurchaseConfirmModal(index) {
     const confirmCard = document.querySelector('.confirm-card');
 
     const listing = marketListings[index];
-    if (confirmPrice) confirmPrice.textContent = listing.price;
-    if (confirmCard) confirmCard.textContent = listing.card.content;
+    confirmPrice.textContent = listing.price;
+    confirmCard.textContent = listing.card.content;
 
     currentPurchaseIndex = index;
-    if (purchaseModal) purchaseModal.classList.remove('hidden');
+    purchaseModal.classList.remove('hidden');
 }
 
 function confirmPurchase() {
@@ -671,7 +650,7 @@ function confirmPurchase() {
 
 function closePurchaseConfirmModal() {
     const purchaseModal = document.getElementById('purchase-confirm-modal');
-    if (purchaseModal) purchaseModal.classList.add('hidden');
+    purchaseModal.classList.add('hidden');
     currentPurchaseIndex = null;
 }
 
@@ -685,22 +664,20 @@ function showNotification(title, message) {
 
 function closeNotificationModal() {
     const notificationModal = document.getElementById('notification-modal');
-    if (notificationModal) notificationModal.classList.add('hidden');
+    notificationModal.classList.add('hidden');
 }
 
 function openSellCardModal() {
     selectedCardIndex = null;
     updateCardsToSell();
     const modal = document.getElementById('sell-card-modal');
-    if (modal) {
-        modal.classList.remove('hidden');
-        modal.scrollTop = 0;
-    }
+    modal.classList.remove('hidden');
+    modal.scrollTop = 0;
 }
 
 function closeSellCardModal() {
     const modal = document.getElementById('sell-card-modal');
-    if (modal) modal.classList.add('hidden');
+    modal.classList.add('hidden');
 }
 
 let selectedCard = null;
@@ -711,7 +688,7 @@ function selectCard(card) {
     });
 
     const sellButton = card.querySelector('.sell-button');
-    if (sellButton) sellButton.classList.remove('hidden');
+    sellButton.classList.remove('hidden');
 
     selectedCard = card;
 }
@@ -746,7 +723,7 @@ function sellSelectedCard(event) {
 
 function confirmPrice() {
     const priceInput = document.getElementById('card-price');
-    if (priceInput) priceInput.blur();
+    priceInput.blur();
 }
 
 function editPrice() {
@@ -754,24 +731,20 @@ function editPrice() {
     const confirmButton = document.getElementById('confirm-price-button');
     const editButton = document.getElementById('edit-price-button');
 
-    if (priceInput && confirmButton && editButton) {
-        priceInput.disabled = false;
-        confirmButton.classList.remove('hidden');
-        editButton.classList.add('hidden');
-        priceInput.focus();
-    }
+    priceInput.disabled = false;
+    confirmButton.classList.remove('hidden');
+    editButton.classList.add('hidden');
+    priceInput.focus();
 }
 
 function updateProfileStatistics() {
     const profileSection = document.getElementById('profile');
-    if (profileSection) {
-        profileSection.innerHTML = `
-            <h1>Profile</h1>
-            <div class="statistics">
-                <p>Total Mined Purr: ${totalMinedPurr}</p>
-                <p>Total Spent Purr: ${totalSpentPurr}</p>
-                <p>Total Opened Boxes: ${totalOpenedBoxes}</p>
-            </div>
-        `;
-    }
-        }
+    profileSection.innerHTML = `
+        <h1>Profile</h1>
+        <div class="statistics">
+            <p>Total Mined Purr: ${totalMinedPurr}</p>
+            <p>Total Spent Purr: ${totalSpentPurr}</p>
+            <p>Total Opened Boxes: ${totalOpenedBoxes}</p>
+        </div>
+    `;
+}
