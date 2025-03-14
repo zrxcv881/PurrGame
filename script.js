@@ -148,7 +148,15 @@ if (window.Telegram && window.Telegram.WebApp) {
 }
 
 // Привязка событий к кнопкам
-document.addEventListener('DOMContentLoaded', () => {
+
+// Остальные функции (ваш текущий код)
+function showSection(sectionId) {
+    document.querySelectorAll('.content').forEach(div => {
+        div.classList.remove('active');
+        div.classList.add('hidden');
+    });
+
+    const seledocument.addEventListener('DOMContentLoaded', () => {
     tokenDisplay = document.getElementById('token-count');
     miningButton = document.getElementById('mining-button');
     miningText = document.getElementById('mining-text');
@@ -168,16 +176,60 @@ document.addEventListener('DOMContentLoaded', () => {
     if (document.getElementById('toggle-upgrades')) {
         document.getElementById('toggle-upgrades').addEventListener('click', () => showMarketSection('upgrades'));
     }
+    if (document.getElementById('upgrade-button')) {
+        document.getElementById('upgrade-button').addEventListener('click', purchaseUpgrade);
+    }
+    if (document.getElementById('sell-card-button')) {
+        document.getElementById('sell-card-button').addEventListener('click', openSellCardModal);
+    }
+    if (document.getElementById('close-modal-button')) {
+        document.getElementById('close-modal-button').addEventListener('click', closeModal);
+    }
+    if (document.getElementById('close-purr-modal-button')) {
+        document.getElementById('close-purr-modal-button').addEventListener('click', closePurrModal);
+    }
+    if (document.getElementById('close-not-enough-purr-modal-button')) {
+        document.getElementById('close-not-enough-purr-modal-button').addEventListener('click', closeNotEnoughPurrModal);
+    }
+    if (document.getElementById('close-success-listing-modal-button')) {
+        document.getElementById('close-success-listing-modal-button').addEventListener('click', closeSuccessListingModal);
+    }
+    if (document.getElementById('close-cancel-sale-modal-button')) {
+        document.getElementById('close-cancel-sale-modal-button').addEventListener('click', closeCancelSaleModal);
+    }
+    if (document.getElementById('close-success-purchase-modal-button')) {
+        document.getElementById('close-success-purchase-modal-button').addEventListener('click', closeSuccessPurchaseModal);
+    }
+    if (document.getElementById('close-no-card-selected-modal-button')) {
+        document.getElementById('close-no-card-selected-modal-button').addEventListener('click', closeNoCardSelectedModal);
+    }
+    if (document.getElementById('close-invalid-price-modal-button')) {
+        document.getElementById('close-invalid-price-modal-button').addEventListener('click', closeInvalidPriceModal);
+    }
+    if (document.getElementById('confirm-price-button')) {
+        document.getElementById('confirm-price-button').addEventListener('click', confirmPrice);
+    }
+    if (document.getElementById('edit-price-button')) {
+        document.getElementById('edit-price-button').addEventListener('click', editPrice);
+    }
+    if (document.getElementById('sell-card-confirm-button')) {
+        document.getElementById('sell-card-confirm-button').addEventListener('click', sellCard);
+    }
+    if (document.getElementById('close-sell-card-modal-button')) {
+        document.getElementById('close-sell-card-modal-button').addEventListener('click', closeSellCardModal);
+    }
+    if (document.getElementById('confirm-purchase-button')) {
+        document.getElementById('confirm-purchase-button').addEventListener('click', confirmPurchase);
+    }
+    if (document.getElementById('close-purchase-confirm-modal-button')) {
+        document.getElementById('close-purchase-confirm-modal-button').addEventListener('click', closePurchaseConfirmModal);
+    }
+    if (document.getElementById('cancel-sale-button')) {
+        document.getElementById('cancel-sale-button').addEventListener('click', () => cancelSale(selectedCardIndex));
+    }
 });
 
-// Остальные функции (ваш текущий код)
-function showSection(sectionId) {
-    document.querySelectorAll('.content').forEach(div => {
-        div.classList.remove('active');
-        div.classList.add('hidden');
-    });
-
-    const selectedSection = document.getElementById(sectionId);
+// Остальные функции остаются без измененийctedSection = document.getElementById(sectionId);
     selectedSection.classList.remove('hidden');
     selectedSection.classList.add('active');
 
