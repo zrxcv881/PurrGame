@@ -42,7 +42,7 @@ const createInvoiceLink = async (title, description, payload, price) => {
             payload: payload,
             provider_token: '', // Не требуется для Telegram Stars
             currency: 'XTR', // Валюта Telegram Stars
-            prices: [{ label: '1 Box', amount: price * 100 }], // 1 Star = 100
+            prices: [{ label: '1 Box', amount: price * 1 }], // 1 Star = 100
         }),
     });
     const data = await response.json();
