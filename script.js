@@ -9,7 +9,7 @@ let currentPurchaseIndex = null;
 let totalMinedPurr = 0;
 let totalSpentPurr = 0;
 let totalOpenedBoxes = 0;
-let lastMiningTime = Date.now(); // Время последнего майнинга
+let lastMiningTime = Date.now(); // Время пос��еднего майнинга
 
 // Mining upgrades
 let miningUpgrades = [
@@ -71,28 +71,6 @@ function loadProgress() {
         }
     });
 }
-// Привязка событий к кнопкам
-document.addEventListener('DOMContentLoaded', () => {
-    tokenDisplay = document.getElementById('token-count');
-    miningButton = document.getElementById('mining-button');
-    miningText = document.getElementById('mining-text');
-    miningTimer = document.getElementById('mining-timer');
-    getCardButton = document.getElementById('get-card-button');
-    marketListingsContainer = document.getElementById('market-listings-container');
-
-    if (miningButton) {
-        miningButton.addEventListener('click', startMining);
-    }
-    if (getCardButton) {
-        getCardButton.addEventListener('click', getWelcomeCard);
-    }
-    if (document.getElementById('toggle-boxes')) {
-        document.getElementById('toggle-boxes').addEventListener('click', () => showMarketSection('boxes'));
-    }
-    if (document.getElementById('toggle-upgrades')) {
-        document.getElementById('toggle-upgrades').addEventListener('click', () => showMarketSection('upgrades'));
-    }
-});
 
 // Обновление интерфейса после загрузки данных
 function updateUI() {
