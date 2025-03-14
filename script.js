@@ -36,7 +36,8 @@ function saveProgress() {
         totalMinedPurr,
         totalSpentPurr,
         totalOpenedBoxes,
-        lastMiningTime
+        lastMiningTime,
+        marketListings
     };
 
     Telegram.WebApp.CloudStorage.setItem('progress', JSON.stringify(progress), (error, success) => {
@@ -45,7 +46,7 @@ function saveProgress() {
         } else {
             console.log('Progress saved successfully:', success);
         }
-    });
+    };
 }
 
 // Загрузка прогресса
@@ -64,6 +65,7 @@ function loadProgress() {
             totalSpentPurr = progress.totalSpentPurr || 0;
             totalOpenedBoxes = progress.totalOpenedBoxes || 0;
             lastMiningTime = progress.lastMiningTime || Date.now();
+            marketListings = progress.marketListings || [];
 
             updateUI();
         }
@@ -97,77 +99,35 @@ function checkOfflineMining() {
     lastMiningTime = currentTime;
 }
 
-// ================== Общедоступный рынок ==================
-
-// Получить список карточек с рынка
-async function fetchMarketListings() {
-    try {
-        const response = await fetch('https://your-server.com/api/market');
-        const data = await response.json();
-        marketListings = data;
-        updateMarketListings();
-    } catch (error) {
-        console.error('Error fetching market listings:', error);
-    }
-}
+// ================== Рынок ==================
 
 // Добавить карточку на рынок
-async function addCardToMarket(card, price) {
-    try {
-        const response = await fetch('https://your-server.com/api/market', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                card,
-                price,
-                sellerUsername: Telegram.WebApp.initDataUnsafe.user?.username || "Anonymous"
-            }),
-        });
-
-        if (!response.ok) {
-            throw new Error('Failed to add card to market');
-        }
-
-        const data = await response.json();
-        marketListings.unshift(data);
-        updateMarketListings();
-    } catch (error) {
-        console.error('Error adding card to market:', error);
-    }
+function addCardToMarket(card, price) {
+    const sellerUsername = Telegram.WebApp.initDataUnsafe.user?.username || "Anonymous";
+    const newListing = { card, price, sellerUsername };
+    marketListings.unshift(newListing);
+    saveProgress();
+    updateMarketListings();
 }
 
 // Купить карточку с рынка
-async function buyMarketCard(index) {
+function buyMarketCard(index) {
     const listing = marketListings[index];
     if (tokens < listing.price) {
         showNotification("Error", "Not enough Purr to buy this card.");
         return;
     }
 
-    try {
-        const response = await fetch(`https://your-server.com/api/market/${listing.id}`, {
-            method: 'DELETE',
-        });
+    tokens -= listing.price;
+    tokenDisplay.textContent = tokens.toString();
 
-        if (!response.ok) {
-            throw new Error('Failed to buy card');
-        }
+    userCards.push(listing.card);
+    marketListings.splice(index, 1);
 
-        tokens -= listing.price;
-        tokenDisplay.textContent = tokens.toString();
-
-        userCards.push(listing.card);
-        marketListings.splice(index, 1);
-
-        updateMarketListings();
-        updateCardsList();
-        showSuccessPurchaseModal();
-        saveProgress();
-    } catch (error) {
-        console.error('Error buying card:', error);
-    }
+    updateMarketListings();
+    updateCardsList();
+    showSuccessPurchaseModal();
+    saveProgress();
 }
 
 // ================== Остальные функции ==================
@@ -185,9 +145,6 @@ if (window.Telegram && window.Telegram.WebApp) {
     // Загрузка прогресса и проверка офлайн-майнинга
     loadProgress();
     checkOfflineMining();
-
-    // Загрузка списка карточек с рынка
-    fetchMarketListings();
 }
 
 // Привязка событий к кнопкам
