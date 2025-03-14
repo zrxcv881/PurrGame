@@ -54,22 +54,22 @@
         <div class="market-section active" id="boxes-section">
             <div class="boxes-container" id="boxes-container">
                 <!-- Box for 100 Purr -->
-                <div class="box" data-cost="100">
+                <div class="box" onclick="buyBox(100)">
                     🎁<br>
                     <span>100 Purr</span>
                 </div>
                 <!-- Box for 500 Purr -->
-                <div class="box" data-cost="500">
+                <div class="box" onclick="buyBox(500)">
                     🎁<br>
                     <span>500 Purr</span>
                 </div>
                 <!-- Box for 1000 Purr -->
-                <div class="box" data-cost="1000">
+                <div class="box" onclick="buyBox(1000)">
                     🎁<br>
                     <span>1000 Purr</span>
                 </div>
                 <!-- Box for 50 Telegram Stars -->
-                <div class="box" data-cost="50" data-stars="true">
+                <div class="box" onclick="buyBoxWithStars(50)">
                     🎁<br>
                     <span>50 Telegram Stars</span>
                 </div>
@@ -79,7 +79,7 @@
         <!-- Upgrades Section -->
         <div class="market-section hidden" id="upgrades-section">
             <div class="upgrades-container">
-                <button id="upgrade-button" class="upgrade-button">Upgrade Mining (Level 1): +10% (1000 Purr)</button>
+                <button id="upgrade-button" class="upgrade-button" onclick="purchaseUpgrade()">Upgrade Mining (Level 1): +10% (1000 Purr)</button>
             </div>
         </div>
     </div>
@@ -90,7 +90,7 @@
         <p>Here you can buy or sell cards with other users.</p>
 
         <!-- Button to open the sell card modal -->
-        <button id="sell-card-button" class="sell-card-button">Sell Card</button>
+        <button class="sell-card-button" onclick="openSellCardModal()">Sell Card</button>
 
         <!-- Market Listings -->
         <div class="market-listings">
@@ -113,23 +113,23 @@
 
     <!-- Navbar -->
     <div class="navbar">
-        <button id="home-button">
+        <button id="home-button" onclick="showSection('home')">
             <i class="fas fa-home"></i>
             <span>Home</span>
         </button>
-        <button id="storage-button">
+        <button id="storage-button" onclick="showSection('storage')">
             <i class="fas fa-box-open"></i>
             <span>Storage</span>
         </button>
-        <button id="market-button">
+        <button id="market-button" onclick="showSection('market')">
             <i class="fas fa-shopping-cart"></i>
             <span>Market</span>
         </button>
-        <button id="exchange-button">
+        <button id="exchange-button" onclick="showSection('exchange')">
             <i class="fas fa-exchange-alt"></i>
             <span>Exchange</span>
         </button>
-        <button id="profile-button">
+        <button id="profile-button" onclick="showSection('profile')">
             <i class="fas fa-user"></i>
             <span>Profile</span>
         </button>
@@ -143,7 +143,7 @@
             <div class="card-modal-card">
                 🎉
             </div>
-            <button id="close-modal-button">Close</button>
+            <button onclick="closeModal()">Close</button>
         </div>
     </div>
 
@@ -152,7 +152,7 @@
         <div class="modal-content">
             <h2>Oops!</h2>
             <p>You don't have enough Purr to buy this box.</p>
-            <button id="close-purr-modal-button">Close</button>
+            <button onclick="closePurrModal()">Close</button>
         </div>
     </div>
 
@@ -165,13 +165,13 @@
             </div>
             <div class="price-input-container">
                 <input type="number" id="card-price" placeholder="Enter price in Purr" min="1">
-                <button id="confirm-price-button">✓</button>
-                <button id="edit-price-button" class="hidden">✎</button>
+                <button id="confirm-price-button" onclick="confirmPrice()">✓</button>
+                <button id="edit-price-button" class="hidden" onclick="editPrice()">✎</button>
             </div>
-            <button id="sell-card-confirm-button">Sell Card</button>
-            <button id="close-sell-card-modal-button">Close</button>
+            <button onclick="sellCard()">Sell Card</button>
+            <button onclick="closeSellCardModal()">Close</button>
             <!-- Кнопка отмены продажи -->
-            <button id="cancel-sale-button" class="hidden">Cancel Sale</button>
+            <button id="cancel-sale-button" class="hidden" onclick="cancelSale()">Cancel Sale</button>
         </div>
     </div>
 
@@ -183,8 +183,8 @@
             <div class="confirm-card">
                 <!-- Card content will be added here -->
             </div>
-            <button id="confirm-purchase-button">Yes, Buy</button>
-            <button id="close-purchase-confirm-modal-button">Cancel</button>
+            <button onclick="confirmPurchase()">Yes, Buy</button>
+            <button onclick="closePurchaseConfirmModal()">Cancel</button>
         </div>
     </div>
 
@@ -193,7 +193,7 @@
         <div class="modal-content">
             <h2 id="notification-title"></h2>
             <p id="notification-message"></p>
-            <button id="close-notification-modal-button">Close</button>
+            <button onclick="closeNotificationModal()">Close</button>
         </div>
     </div>
 
@@ -202,7 +202,7 @@
         <div class="modal-content">
             <h2>Oops!</h2>
             <p>You don't have enough Purr to upgrade mining.</p>
-            <button id="close-not-enough-purr-modal-button">Close</button>
+            <button onclick="closeNotEnoughPurrModal()">Close</button>
         </div>
     </div>
 
@@ -211,7 +211,7 @@
         <div class="modal-content">
             <h2>Success!</h2>
             <p>Your card has been successfully listed for sale.</p>
-            <button id="close-success-listing-modal-button">Close</button>
+            <button onclick="closeSuccessListingModal()">Close</button>
         </div>
     </div>
 
@@ -220,7 +220,7 @@
         <div class="modal-content">
             <h2>Success!</h2>
             <p>Your card has been successfully removed from the market.</p>
-            <button id="close-cancel-sale-modal-button">Close</button>
+            <button onclick="closeCancelSaleModal()">Close</button>
         </div>
     </div>
 
@@ -229,7 +229,7 @@
         <div class="modal-content">
             <h2>Success!</h2>
             <p>You have successfully purchased the card.</p>
-            <button id="close-success-purchase-modal-button">Close</button>
+            <button onclick="closeSuccessPurchaseModal()">Close</button>
         </div>
     </div>
 
@@ -238,7 +238,7 @@
         <div class="modal-content">
             <h2>Oops!</h2>
             <p>Please select a card to sell.</p>
-            <button id="close-no-card-selected-modal-button">Close</button>
+            <button onclick="closeNoCardSelectedModal()">Close</button>
         </div>
     </div>
 
@@ -247,11 +247,11 @@
         <div class="modal-content">
             <h2>Oops!</h2>
             <p>Please enter a valid price (minimum 1 Purr).</p>
-            <button id="close-invalid-price-modal-button">Close</button>
+            <button onclick="closeInvalidPriceModal()">Close</button>
         </div>
     </div>
 
     <!-- Подключение внешнего JavaScript-файла -->
     <script src="script.js"></script>
 </body>
-</html>
+    </html>
