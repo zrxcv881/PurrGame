@@ -31,7 +31,7 @@ const marketListingsContainer = document.getElementById('market-listings-contain
 const USER_DATA_KEY = 'user_data'; // Для данных пользователя
 const MARKET_LISTINGS_KEY = 'market_listings'; // Для общих объявлений
 
-// Загрузка данных пользователя
+// Инициализация данных пользователя
 function initUserData() {
     if (window.Telegram && window.Telegram.WebApp && Telegram.WebApp.CloudStorage) {
         Telegram.WebApp.CloudStorage.getItem(USER_DATA_KEY, (error, data) => {
@@ -56,6 +56,7 @@ function initUserData() {
         });
     }
 }
+
 // Сохранение данных пользователя
 function saveUserData() {
     if (window.Telegram && window.Telegram.WebApp && Telegram.WebApp.CloudStorage) {
@@ -74,12 +75,11 @@ function saveUserData() {
             if (error) {
                 console.error('Error saving user data:', error);
             } else if (success) {
-                console.log('User data saved successfully');
+                console.log('User data saved successfully. Tokens:', tokens);
             }
         });
     }
-            }
-
+}
 
 // Загрузка общих объявлений
 function fetchMarketListings() {
@@ -368,62 +368,71 @@ function calculateMiningReward(baseReward) {
 }
 
 function claimTokens() {
-       if (miningActive && Date.now() >= miningEndTime) {
-           miningActive = false;
-           miningText.textContent = "Mining";
-           miningButton.onclick = startMining;
+    if (miningActive && Date.now() >= miningEndTime) {
+        miningActive = false;
+        miningText.textContent = "Mining";
+        miningButton.onclick = startMining;
 
-           const tokenAmount = document.getElementById('token-amount');
-           if (tokenAmount) {
-               tokenAmount.remove();
-           }
+        const tokenAmount = document.getElementById('token-amount');
+        if (tokenAmount) {
+            tokenAmount.remove();
+        }
 
-           const baseReward = 120;
-           const totalReward = calculateMiningReward(baseReward);
-           animateTokenIncrement(totalReward);
+        const baseReward = 120;
+        const totalReward = calculateMiningReward(baseReward);
 
-           totalMinedPurr += totalReward;
-           updateProfileStatistics();
-           saveUserData(); // Сохраняем данные после майнинга
-       }
+        // Обновляем переменную tokens сразу
+        tokens += totalReward;
+        totalMinedPurr += totalReward;
+
+        // Запускаем анимацию
+        animateTokenIncrement(totalReward);
+
+        // Сохраняем данные после завершения анимации
+        setTimeout(() => {
+            saveUserData();
+        }, 1000); // Задержка равна длительности анимации (1000 мс)
+
+        updateProfileStatistics();
+    }
 }
+
 function animateTokenIncrement(amount) {
-    const targetTokens = tokens + amount;
+    const targetTokens = tokens; // Уже обновлено в claimTokens
     const incrementDuration = 1000;
     const startTime = Date.now();
 
     const animation = setInterval(() => {
         const elapsedTime = Date.now() - startTime;
         if (elapsedTime >= incrementDuration) {
-            tokens = targetTokens;
-            tokenDisplay.textContent = tokens.toString();
+            tokenDisplay.textContent = targetTokens.toString();
             clearInterval(animation);
         } else {
             const progress = elapsedTime / incrementDuration;
-            const currentTokens = Math.floor(tokens + amount * progress);
+            const currentTokens = Math.floor(tokens - amount + amount * progress);
             tokenDisplay.textContent = currentTokens.toString();
         }
     }, 16);
 }
 
 function buyBox(cost) {
-       if (tokens >= cost) {
-           tokens -= cost;
-           tokenDisplay.textContent = tokens.toString();
+    if (tokens >= cost) {
+        tokens -= cost;
+        tokenDisplay.textContent = tokens.toString();
 
-           totalSpentPurr += cost;
-           totalOpenedBoxes += 1;
-           updateProfileStatistics();
+        totalSpentPurr += cost;
+        totalOpenedBoxes += 1;
+        updateProfileStatistics();
 
-           const randomCard = getRandomCard();
-           userCards.push(randomCard);
-           updateCardsList();
-           updateCardsToSell();
-           showModalWithCard(randomCard.content);
-           saveUserData(); // Сохраняем данные после покупки
-       } else {
-           showPurrModal();
-       }
+        const randomCard = getRandomCard();
+        userCards.push(randomCard);
+        updateCardsList();
+        updateCardsToSell();
+        showModalWithCard(randomCard.content);
+        saveUserData();
+    } else {
+        showPurrModal();
+    }
 }
 
 function getRandomCard() {
@@ -714,7 +723,7 @@ if (window.Telegram && window.Telegram.WebApp) {
     }
 
     initUserData(); // Загружаем данные пользователя
-    fetchMarketListings(); // Загружаем общие объявления
+    fetchMarketListings(); // Загружаем объявления с сервера
 }
 
 // Привязка событий к кнопкам
