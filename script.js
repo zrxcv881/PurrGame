@@ -27,15 +27,16 @@ const miningTimer = document.getElementById('mining-timer');
 const getCardButton = document.getElementById('get-card-button');
 const marketListingsContainer = document.getElementById('market-listings-container');
 
-// Ключ для хранения данных в облачном хранилище
-const STORAGE_KEY = 'user_data';
+// Ключи для облачного хранилища
+const USER_DATA_KEY = 'user_data'; // Для данных пользователя
+const MARKET_LISTINGS_KEY = 'market_listings'; // Для общих объявлений
 
-// Инициализация данных из облачного хранилища Telegram
-function initData() {
+// Инициализация данных пользователя
+function initUserData() {
     if (window.Telegram && window.Telegram.WebApp && Telegram.WebApp.CloudStorage) {
-        Telegram.WebApp.CloudStorage.getItem(STORAGE_KEY, (error, data) => {
+        Telegram.WebApp.CloudStorage.getItem(USER_DATA_KEY, (error, data) => {
             if (error) {
-                console.error('Error loading data:', error);
+                console.error('Error loading user data:', error);
                 return;
             }
 
@@ -43,7 +44,6 @@ function initData() {
                 const parsedData = JSON.parse(data);
                 tokens = parsedData.tokens || 0;
                 userCards = parsedData.userCards || [];
-                marketListings = parsedData.marketListings || [];
                 totalMinedPurr = parsedData.totalMinedPurr || 0;
                 totalSpentPurr = parsedData.totalSpentPurr || 0;
                 totalOpenedBoxes = parsedData.totalOpenedBoxes || 0;
@@ -57,13 +57,12 @@ function initData() {
     }
 }
 
-// Сохранение данных в облачное хранилище Telegram
-function saveData() {
+// Сохранение данных пользователя
+function saveUserData() {
     if (window.Telegram && window.Telegram.WebApp && Telegram.WebApp.CloudStorage) {
         const data = JSON.stringify({
             tokens,
             userCards,
-            marketListings,
             totalMinedPurr,
             totalSpentPurr,
             totalOpenedBoxes,
@@ -72,12 +71,64 @@ function saveData() {
             miningUpgrades
         });
 
-        Telegram.WebApp.CloudStorage.setItem(STORAGE_KEY, data, (error, success) => {
+        Telegram.WebApp.CloudStorage.setItem(USER_DATA_KEY, data, (error, success) => {
             if (error) {
-                console.error('Error saving data:', error);
+                console.error('Error saving user data:', error);
             } else if (success) {
-                console.log('Data saved successfully');
+                console.log('User data saved successfully');
             }
+        });
+    }
+}
+
+// Загрузка общих объявлений
+function fetchMarketListings() {
+    if (window.Telegram && window.Telegram.WebApp && Telegram.WebApp.CloudStorage) {
+        Telegram.WebApp.CloudStorage.getItem(MARKET_LISTINGS_KEY, (error, data) => {
+            if (error) {
+                console.error('Error loading market listings:', error);
+                return;
+            }
+
+            if (data) {
+                marketListings = JSON.parse(data);
+            } else {
+                marketListings = [];
+            }
+
+            updateMarketListings();
+        });
+    }
+}
+
+// Добавление объявления в общий список
+function addMarketListing(listing) {
+    if (window.Telegram && window.Telegram.WebApp && Telegram.WebApp.CloudStorage) {
+        // Загружаем текущие объявления
+        Telegram.WebApp.CloudStorage.getItem(MARKET_LISTINGS_KEY, (error, data) => {
+            if (error) {
+                console.error('Error loading market listings:', error);
+                return;
+            }
+
+            let listings = [];
+            if (data) {
+                listings = JSON.parse(data);
+            }
+
+            // Добавляем новое объявление
+            listings.unshift(listing);
+
+            // Сохраняем обновленный список
+            Telegram.WebApp.CloudStorage.setItem(MARKET_LISTINGS_KEY, JSON.stringify(listings), (error, success) => {
+                if (error) {
+                    console.error('Error saving market listings:', error);
+                } else if (success) {
+                    console.log('Market listing added successfully');
+                    marketListings = listings;
+                    updateMarketListings();
+                }
+            });
         });
     }
 }
@@ -171,7 +222,7 @@ function purchaseUpgrade() {
     showNotification("Success", `Mining efficiency increased by ${currentUpgrade.bonus}%!`);
     currentUpgradeIndex++;
     updateUpgradeButton();
-    saveData();
+    saveUserData();
 }
 
 function getWelcomeCard() {
@@ -180,7 +231,7 @@ function getWelcomeCard() {
     updateCardsList();
     updateCardsToSell();
     showModal();
-    saveData();
+    saveUserData();
 }
 
 function updateCardsList() {
@@ -333,7 +384,7 @@ function claimTokens() {
 
         totalMinedPurr += totalReward;
         updateProfileStatistics();
-        saveData();
+        saveUserData();
     }
 }
 
@@ -370,7 +421,7 @@ function buyBox(cost) {
         updateCardsList();
         updateCardsToSell();
         showModalWithCard(randomCard.content);
-        saveData();
+        saveUserData();
     } else {
         showPurrModal();
     }
@@ -440,15 +491,17 @@ function sellCard() {
     userCards.splice(selectedCardIndex, 1);
 
     const sellerUsername = Telegram.WebApp.initDataUnsafe.user?.username || "Anonymous";
-    marketListings.unshift({ card: cardToSell, price: price, owner: "user", sellerUsername: sellerUsername });
+    const listing = { card: cardToSell, price: price, owner: "user", sellerUsername: sellerUsername };
+
+    // Добавляем объявление в общий список
+    addMarketListing(listing);
 
     updateCardsToSell();
-    updateMarketListings();
     updateCardsList();
 
     showSuccessListingModal();
     closeSellCardModal();
-    saveData();
+    saveUserData();
 }
 
 function cancelSale(listingIndex) {
@@ -472,7 +525,7 @@ function cancelSale(listingIndex) {
     updateCardsToSell();
 
     showCancelSaleModal();
-    saveData();
+    saveUserData();
 }
 
 function updateMarketListings() {
@@ -553,7 +606,7 @@ function buyMarketCard(index) {
     updateMarketListings();
     updateCardsList();
     showSuccessPurchaseModal();
-    saveData();
+    saveUserData();
 }
 
 function showNotification(title, message) {
@@ -661,7 +714,8 @@ if (window.Telegram && window.Telegram.WebApp) {
         document.getElementById('welcome-text').textContent = welcomeMessage;
     }
 
-    initData();
+    initUserData(); // Загружаем данные пользователя
+    fetchMarketListings(); // Загружаем общие объявления
 }
 
 // Привязка событий к кнопкам
