@@ -31,7 +31,7 @@ const marketListingsContainer = document.getElementById('market-listings-contain
 const USER_DATA_KEY = 'user_data'; // Для данных пользователя
 const MARKET_LISTINGS_KEY = 'market_listings'; // Для общих объявлений
 
-// Инициализация данных пользователя
+// Загрузка данных пользователя
 function initUserData() {
     if (window.Telegram && window.Telegram.WebApp && Telegram.WebApp.CloudStorage) {
         Telegram.WebApp.CloudStorage.getItem(USER_DATA_KEY, (error, data) => {
@@ -56,7 +56,6 @@ function initUserData() {
         });
     }
 }
-
 // Сохранение данных пользователя
 function saveUserData() {
     if (window.Telegram && window.Telegram.WebApp && Telegram.WebApp.CloudStorage) {
@@ -79,7 +78,8 @@ function saveUserData() {
             }
         });
     }
-}
+            }
+
 
 // Загрузка общих объявлений
 function fetchMarketListings() {
@@ -368,26 +368,25 @@ function calculateMiningReward(baseReward) {
 }
 
 function claimTokens() {
-    if (miningActive && Date.now() >= miningEndTime) {
-        miningActive = false;
-        miningText.textContent = "Mining";
-        miningButton.onclick = startMining;
+       if (miningActive && Date.now() >= miningEndTime) {
+           miningActive = false;
+           miningText.textContent = "Mining";
+           miningButton.onclick = startMining;
 
-        const tokenAmount = document.getElementById('token-amount');
-        if (tokenAmount) {
-            tokenAmount.remove();
-        }
+           const tokenAmount = document.getElementById('token-amount');
+           if (tokenAmount) {
+               tokenAmount.remove();
+           }
 
-        const baseReward = 120;
-        const totalReward = calculateMiningReward(baseReward);
-        animateTokenIncrement(totalReward);
+           const baseReward = 120;
+           const totalReward = calculateMiningReward(baseReward);
+           animateTokenIncrement(totalReward);
 
-        totalMinedPurr += totalReward;
-        updateProfileStatistics();
-        saveUserData();
-    }
+           totalMinedPurr += totalReward;
+           updateProfileStatistics();
+           saveUserData(); // Сохраняем данные после майнинга
+       }
 }
-
 function animateTokenIncrement(amount) {
     const targetTokens = tokens + amount;
     const incrementDuration = 1000;
@@ -408,23 +407,23 @@ function animateTokenIncrement(amount) {
 }
 
 function buyBox(cost) {
-    if (tokens >= cost) {
-        tokens -= cost;
-        tokenDisplay.textContent = tokens.toString();
+       if (tokens >= cost) {
+           tokens -= cost;
+           tokenDisplay.textContent = tokens.toString();
 
-        totalSpentPurr += cost;
-        totalOpenedBoxes += 1;
-        updateProfileStatistics();
+           totalSpentPurr += cost;
+           totalOpenedBoxes += 1;
+           updateProfileStatistics();
 
-        const randomCard = getRandomCard();
-        userCards.push(randomCard);
-        updateCardsList();
-        updateCardsToSell();
-        showModalWithCard(randomCard.content);
-        saveUserData();
-    } else {
-        showPurrModal();
-    }
+           const randomCard = getRandomCard();
+           userCards.push(randomCard);
+           updateCardsList();
+           updateCardsToSell();
+           showModalWithCard(randomCard.content);
+           saveUserData(); // Сохраняем данные после покупки
+       } else {
+           showPurrModal();
+       }
 }
 
 function getRandomCard() {
