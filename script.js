@@ -715,7 +715,7 @@ function updateProfileStatistics() {
 // Инициализация Telegram Web App
 if (window.Telegram && window.Telegram.WebApp) {
     Telegram.WebApp.ready();
-
+    Telegram.WebApp.requestFullscreen() 
     const user = Telegram.WebApp.initDataUnsafe.user;
     if (user) {
         const welcomeMessage = `Welcome, ${user.first_name || "User"}!`;
