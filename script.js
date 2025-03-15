@@ -27,28 +27,38 @@ const miningTimer = document.getElementById('mining-timer');
 const getCardButton = document.getElementById('get-card-button');
 const marketListingsContainer = document.getElementById('market-listings-container');
 
+// Ключ для хранения данных в облачном хранилище
+const STORAGE_KEY = 'user_data';
+
 // Инициализация данных из облачного хранилища Telegram
-async function initData() {
+function initData() {
     if (window.Telegram && window.Telegram.WebApp && Telegram.WebApp.CloudStorage) {
-        const data = await Telegram.WebApp.CloudStorage.getItem('userData');
-        if (data) {
-            const parsedData = JSON.parse(data);
-            tokens = parsedData.tokens || 0;
-            userCards = parsedData.userCards || [];
-            marketListings = parsedData.marketListings || [];
-            totalMinedPurr = parsedData.totalMinedPurr || 0;
-            totalSpentPurr = parsedData.totalSpentPurr || 0;
-            totalOpenedBoxes = parsedData.totalOpenedBoxes || 0;
-            miningEfficiency = parsedData.miningEfficiency || 0;
-            currentUpgradeIndex = parsedData.currentUpgradeIndex || 0;
-            miningUpgrades = parsedData.miningUpgrades || miningUpgrades;
-        }
-        updateUI();
+        Telegram.WebApp.CloudStorage.getItem(STORAGE_KEY, (error, data) => {
+            if (error) {
+                console.error('Error loading data:', error);
+                return;
+            }
+
+            if (data) {
+                const parsedData = JSON.parse(data);
+                tokens = parsedData.tokens || 0;
+                userCards = parsedData.userCards || [];
+                marketListings = parsedData.marketListings || [];
+                totalMinedPurr = parsedData.totalMinedPurr || 0;
+                totalSpentPurr = parsedData.totalSpentPurr || 0;
+                totalOpenedBoxes = parsedData.totalOpenedBoxes || 0;
+                miningEfficiency = parsedData.miningEfficiency || 0;
+                currentUpgradeIndex = parsedData.currentUpgradeIndex || 0;
+                miningUpgrades = parsedData.miningUpgrades || miningUpgrades;
+            }
+
+            updateUI();
+        });
     }
 }
 
 // Сохранение данных в облачное хранилище Telegram
-async function saveData() {
+function saveData() {
     if (window.Telegram && window.Telegram.WebApp && Telegram.WebApp.CloudStorage) {
         const data = JSON.stringify({
             tokens,
@@ -61,7 +71,14 @@ async function saveData() {
             currentUpgradeIndex,
             miningUpgrades
         });
-        await Telegram.WebApp.CloudStorage.setItem('userData', data);
+
+        Telegram.WebApp.CloudStorage.setItem(STORAGE_KEY, data, (error, success) => {
+            if (error) {
+                console.error('Error saving data:', error);
+            } else if (success) {
+                console.log('Data saved successfully');
+            }
+        });
     }
 }
 
