@@ -61,6 +61,28 @@ function initUserData() {
     }
 }
 
+// Инициализация приложения
+function initApp() {
+    if (window.Telegram && window.Telegram.WebApp) {
+        Telegram.WebApp.ready();
+        Telegram.WebApp.expand();
+
+        const user = Telegram.WebApp.initDataUnsafe.user;
+        if (user) {
+            const welcomeMessage = `Welcome, ${user.first_name || "User"}!`;
+            document.getElementById('welcome-text').textContent = welcomeMessage;
+        }
+
+        initUserData(); // Загружаем данные пользователя
+        fetchMarketListings(); // Загружаем объявления с сервера
+        loadMiningData(); // Загружаем данные о майнинге
+    }
+
+    bindEvents(); // Привязываем обработчики событий
+}
+
+// Запуск инициализации приложения
+initApp();
 // Сохранение данных пользователя
 function saveUserData() {
     if (window.Telegram && window.Telegram.WebApp && Telegram.WebApp.CloudStorage) {
