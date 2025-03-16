@@ -169,11 +169,21 @@ function updateUI() {
     if (miningActive) {
         const timeLeft = miningEndTime - Date.now();
         if (timeLeft > 0) {
+            // Майнинг еще активен, запускаем таймер
             startMiningTimer(timeLeft);
         } else {
+            // Майнинг завершен, показываем кнопку "Claim"
             miningActive = false;
             miningText.textContent = "Claim";
+            miningTimer.classList.add('hidden');
+            miningTimer.textContent = "";
+            miningButton.classList.remove('disabled');
             miningButton.onclick = claimTokens;
+
+            const tokenAmount = document.createElement('span');
+            tokenAmount.id = 'token-amount';
+            tokenAmount.textContent = `+${calculateMiningReward(120)} Purr`;
+            miningButton.appendChild(tokenAmount);
         }
     }
 }
@@ -183,6 +193,7 @@ loadProgress();
 
 // ================== МАЙНИНГ НА 4 ЧАСА ==================
 
+// Функция для запуска майнинга
 function startMining() {
     if (!miningActive) {
         miningActive = true;
@@ -198,29 +209,8 @@ function startMining() {
     }
 }
 
-function startMiningTimer(duration) {
-    const timer = setInterval(() => {
-        const timeLeft = miningEndTime - Date.now();
-        if (timeLeft <= 0) {
-            clearInterval(timer);
-            miningText.textContent = "Claim";
-            miningTimer.classList.add('hidden');
-            miningTimer.textContent = "";
-            miningButton.classList.remove('disabled');
-            miningButton.onclick = claimTokens;
-
-            const tokenAmount = document.createElement('span');
-            tokenAmount.id = 'token-amount';
-            tokenAmount.textContent = `+${calculateMiningReward(120)} Purr`;
-            miningButton.appendChild(tokenAmount);
-        } else {
-            const hours = Math.floor(timeLeft / (1000 * 60 * 60));
-            const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
-            miningTimer.textContent = `${hours}h ${minutes}m`;
-        }
-    }, 1000);
-}
-
+function claimTokens() {
+// Функция для завершения майнинга
 function claimTokens() {
     if (miningActive && Date.now() >= miningEndTime) {
         miningActive = false;
@@ -241,7 +231,6 @@ function claimTokens() {
         saveProgress();
     }
 }
-
 // ================== ПРИВЕТСТВЕННАЯ КАРТОЧКА ==================
 
 function getWelcomeCard() {
@@ -264,7 +253,29 @@ function getWelcomeCard() {
 
 // Остальные функции (ваш текущий код)
 function showSection(sectionId) {
-    document.querySelectorAll('.content').forEach(div => {
+    document.querySelectorAll('.content').forE// Функция для запуска таймера майнинга
+function startMiningTimer(duration) {
+    const timer = setInterval(() => {
+        const timeLeft = miningEndTime - Date.now();
+        if (timeLeft <= 0) {
+            clearInterval(timer);
+            miningText.textContent = "Claim";
+            miningTimer.classList.add('hidden');
+            miningTimer.textContent = "";
+            miningButton.classList.remove('disabled');
+            miningButton.onclick = claimTokens;
+
+            const tokenAmount = document.createElement('span');
+            tokenAmount.id = 'token-amount';
+            tokenAmount.textContent = `+${calculateMiningReward(120)} Purr`;
+            miningButton.appendChild(tokenAmount);
+        } else {
+            const hours = Math.floor(timeLeft / (1000 * 60 * 60));
+            const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
+            miningTimer.textContent = `${hours}h ${minutes}m`;
+        }
+    }, 1000);
+}ach(div => {
         div.classList.remove('active');
         div.classList.add('hidden');
     });
