@@ -61,28 +61,6 @@ function initUserData() {
     }
 }
 
-// Инициализация приложения
-function initApp() {
-    if (window.Telegram && window.Telegram.WebApp) {
-        Telegram.WebApp.ready();
-        Telegram.WebApp.expand();
-
-        const user = Telegram.WebApp.initDataUnsafe.user;
-        if (user) {
-            const welcomeMessage = `Welcome, ${user.first_name || "User"}!`;
-            document.getElementById('welcome-text').textContent = welcomeMessage;
-        }
-
-        initUserData(); // Загружаем данные пользователя
-        fetchMarketListings(); // Загружаем объявления с сервера
-        loadMiningData(); // Загружаем данные о майнинге
-    }
-
-    bindEvents(); // Привязываем обработчики событий
-}
-
-// Запуск инициализации приложения
-initApp();
 // Сохранение данных пользователя
 function saveUserData() {
     if (window.Telegram && window.Telegram.WebApp && Telegram.WebApp.CloudStorage) {
@@ -186,57 +164,6 @@ function startMiningTimer(timeLeft) {
     }, 1000);
 }
 
-// Привязка событий к кнопкам
-function bindEvents() {
-    // Кнопка майнинга
-    const miningButton = document.getElementById('mining-button');
-    if (miningButton) {
-        miningButton.addEventListener('click', startMining);
-    }
-
-    // Кнопка получения приветственной карточки
-    const getCardButton = document.getElementById('get-card-button');
-    if (getCardButton) {
-        getCardButton.addEventListener('click', getWelcomeCard);
-    }
-
-    // Кнопки переключения разделов рынка
-    const toggleBoxesButton = document.getElementById('toggle-boxes');
-    if (toggleBoxesButton) {
-        toggleBoxesButton.addEventListener('click', () => showMarketSection('boxes'));
-    }
-
-    const toggleUpgradesButton = document.getElementById('toggle-upgrades');
-    if (toggleUpgradesButton) {
-        toggleUpgradesButton.addEventListener('click', () => showMarketSection('upgrades'));
-    }
-
-    // Кнопки навбара
-    const homeButton = document.getElementById('home-button');
-    if (homeButton) {
-        homeButton.addEventListener('click', () => showSection('home'));
-    }
-
-    const storageButton = document.getElementById('storage-button');
-    if (storageButton) {
-        storageButton.addEventListener('click', () => showSection('storage'));
-    }
-
-    const marketButton = document.getElementById('market-button');
-    if (marketButton) {
-        marketButton.addEventListener('click', () => showSection('market'));
-    }
-
-    const exchangeButton = document.getElementById('exchange-button');
-    if (exchangeButton) {
-        exchangeButton.addEventListener('click', () => showSection('exchange'));
-    }
-
-    const profileButton = document.getElementById('profile-button');
-    if (profileButton) {
-        profileButton.addEventListener('click', () => showSection('profile'));
-    }
-}
 // Остальные функции (ваш текущий код)
 function showSection(sectionId) {
     document.querySelectorAll('.content').forEach(div => {
