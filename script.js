@@ -160,11 +160,45 @@ function loadProgress() {
     });
 }
 
-// Обновление интерфейса после загрузки данных
+
+
+// Загрузка прогресса при запуске приложения
+loadProgress();
+
+// ================== МАЙНИНГ НА 4 ЧАСА ==================
+
+function startMining() {
+    if (!miningActive) {
+        miningActive = true;
+        miningEndTime = Date.now() + 4 * 60 * 60 * 1000; // 4 часа
+        saveProgress();
+
+        miningButton.classList.add('disabled');
+        miningText.textContent = "Mining...";
+        miningTimer.classList.remove('hidden');
+        miningButton.onclick = null;
+
+        startMiningTimer(4 * 60 * 60 * 1000);
+    }
+}
+
+function startMiningTimer(duration) {
+    const timer = setInterval(() => {
+        const timeLeft = miningEndTime - Date.now();
+        if (timeLeft <= 0) {
+            clearInterva// Обновление интерфейса после загрузки данных
 function updateUI() {
     tokenDisplay.textContent = tokens.toString();
     updateCardsList();
     updateProfileStatistics();
+
+    // Скрываем кнопку, если приветственная карточка уже получена
+    const getCardButton = document.getElementById('get-card-button');
+    if (hasWelcomeCard) {
+        getCardButton.classList.add('hidden');
+    } else {
+        getCardButton.classList.remove('hidden');
+    }
 
     if (miningActive) {
         const timeLeft = miningEndTime - Date.now();
@@ -196,33 +230,7 @@ function updateUI() {
         miningButton.classList.remove('disabled');
         miningButton.onclick = startMining;
     }
-}
-
-// Загрузка прогресса при запуске приложения
-loadProgress();
-
-// ================== МАЙНИНГ НА 4 ЧАСА ==================
-
-function startMining() {
-    if (!miningActive) {
-        miningActive = true;
-        miningEndTime = Date.now() + 4 * 60 * 60 * 1000; // 4 часа
-        saveProgress();
-
-        miningButton.classList.add('disabled');
-        miningText.textContent = "Mining...";
-        miningTimer.classList.remove('hidden');
-        miningButton.onclick = null;
-
-        startMiningTimer(4 * 60 * 60 * 1000);
-    }
-}
-
-function startMiningTimer(duration) {
-    const timer = setInterval(() => {
-        const timeLeft = miningEndTime - Date.now();
-        if (timeLeft <= 0) {
-            clearInterval(timer);
+}l(timer);
             miningText.textContent = "Claim";
             miningTimer.classList.add('hidden');
             miningTimer.textContent = "";
@@ -264,6 +272,7 @@ function claimTokens() {
 
 // ================== ПРИВЕТСТВЕННАЯ КАРТОЧКА ==================
 
+// Функция для получения приветственной карточки
 function getWelcomeCard() {
     if (hasWelcomeCard) {
         showNotification("Info", "You have already received your welcome card.");
@@ -278,6 +287,10 @@ function getWelcomeCard() {
     updateCardsList();
     updateCardsToSell();
     showModal();
+
+    // Скрываем кнопку после получения карточки
+    const getCardButton = document.getElementById('get-card-button');
+    getCardButton.classList.add('hidden');
 }
 
 // ================== ОСТАЛЬНЫЕ ФУНКЦИИ ==================
