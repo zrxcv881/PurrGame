@@ -209,7 +209,7 @@ function startMining() {
     }
 }
 
-function claimTokens() {
+
 // Функция для завершения майнинга
 function claimTokens() {
     if (miningActive && Date.now() >= miningEndTime) {
