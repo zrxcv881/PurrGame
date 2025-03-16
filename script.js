@@ -260,7 +260,9 @@ function claimTokens() {
         updateProfileStatistics();
         saveProgress();
     }
-}ПРИВЕТСТВЕННАЯ КАРТОЧКА ==================
+}
+
+//ПРИВЕТСТВЕННАЯ КАРТОЧКА ==================
 
 function getWelcomeCard() {
     if (hasWelcomeCard) {
