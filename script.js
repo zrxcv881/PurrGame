@@ -19,9 +19,6 @@ let miningUpgrades = [
 let miningEfficiency = 0;
 let currentUpgradeIndex = 0;
 
-// Длительность майнинга (4 часа)
-const MINING_DURATION = 4 * 60 * 60 * 1000; // 4 часа в миллисекундах
-
 // DOM Elements
 const tokenDisplay = document.getElementById('token-count');
 const miningButton = document.getElementById('mining-button');
@@ -30,139 +27,91 @@ const miningTimer = document.getElementById('mining-timer');
 const getCardButton = document.getElementById('get-card-button');
 const marketListingsContainer = document.getElementById('market-listings-container');
 
-// Ключи для облачного хранилища
-const USER_DATA_KEY = 'user_data'; // Для данных пользователя
-const MARKET_LISTINGS_KEY = 'market_listings'; // Для общих объявлений
-const MINING_DATA_KEY = 'mining_data'; // Для данных о майнинге
+// ================== НОВЫЙ ФУНКЦИОНАЛ: ОПЛАТА ЗА 1 TELEGRAM STAR ==================
 
-// Инициализация данных пользователя
-function initUserData() {
-    if (window.Telegram && window.Telegram.WebApp && Telegram.WebApp.CloudStorage) {
-        Telegram.WebApp.CloudStorage.getItem(USER_DATA_KEY, (error, data) => {
-            if (error) {
-                console.error('Error loading user data:', error);
-                return;
-            }
-
-            if (data) {
-                const parsedData = JSON.parse(data);
-                tokens = parsedData.tokens || 0;
-                userCards = parsedData.userCards || [];
-                totalMinedPurr = parsedData.totalMinedPurr || 0;
-                totalSpentPurr = parsedData.totalSpentPurr || 0;
-                totalOpenedBoxes = parsedData.totalOpenedBoxes || 0;
-                miningEfficiency = parsedData.miningEfficiency || 0;
-                currentUpgradeIndex = parsedData.currentUpgradeIndex || 0;
-                miningUpgrades = parsedData.miningUpgrades || miningUpgrades;
-            }
-
-            updateUI();
-        });
-    }
-}
-
-// Сохранение данных пользователя
-function saveUserData() {
-    if (window.Telegram && window.Telegram.WebApp && Telegram.WebApp.CloudStorage) {
-        const data = JSON.stringify({
-            tokens,
-            userCards,
-            totalMinedPurr,
-            totalSpentPurr,
-            totalOpenedBoxes,
-            miningEfficiency,
-            currentUpgradeIndex,
-            miningUpgrades
+// Функция для создания инвойса
+const createInvoiceLink = async (title, description, payload, price) => {
+    try {
+        const response = await fetch(`https://api.telegram.org/bot7879732935:AAHpo1NIdQJXUMVCuVXYupEGsqo6-PY0Wjg/createInvoiceLink`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                title: title,
+                description: description,
+                payload: payload,
+                provider_token: '', // Не требуется для Telegram Stars
+                currency: 'XTR', // Валюта Telegram Stars
+                prices: [{ label: '1 Box', amount: price * 1 }], // 1 Star = 100
+            }),
+            signal: AbortSignal.timeout(5000), // Тайм-аут 5 секунд
         });
 
-        Telegram.WebApp.CloudStorage.setItem(USER_DATA_KEY, data, (error, success) => {
-            if (error) {
-                console.error('Error saving user data:', error);
-            } else if (success) {
-                console.log('User data saved successfully. Tokens:', tokens);
-            }
-        });
-    }
-}
-
-// Сохранение данных о майнинге
-function saveMiningData() {
-    if (window.Telegram && window.Telegram.WebApp && Telegram.WebApp.CloudStorage) {
-        const data = JSON.stringify({
-            miningActive,
-            miningEndTime
-        });
-
-        Telegram.WebApp.CloudStorage.setItem(MINING_DATA_KEY, data, (error, success) => {
-            if (error) {
-                console.error('Error saving mining data:', error);
-            } else if (success) {
-                console.log('Mining data saved successfully');
-            }
-        });
-    }
-}
-
-// Загрузка данных о майнинге
-function loadMiningData() {
-    if (window.Telegram && window.Telegram.WebApp && Telegram.WebApp.CloudStorage) {
-        Telegram.WebApp.CloudStorage.getItem(MINING_DATA_KEY, (error, data) => {
-            if (error) {
-                console.error('Error loading mining data:', error);
-                return;
-            }
-
-            if (data) {
-                const parsedData = JSON.parse(data);
-                miningActive = parsedData.miningActive || false;
-                miningEndTime = parsedData.miningEndTime || 0;
-
-                if (miningActive) {
-                    const timeLeft = miningEndTime - Date.now();
-
-                    if (timeLeft > 0) {
-                        // Майнинг ещё активен
-                        startMiningTimer(timeLeft);
-                    } else {
-                        // Майнинг завершён
-                        miningActive = false;
-                        miningText.textContent = "Claim";
-                        miningButton.classList.remove('disabled');
-                        miningButton.onclick = claimTokens;
-                    }
-                }
-            }
-        });
-    }
-}
-
-// Запуск таймера майнинга
-function startMiningTimer(timeLeft) {
-    miningButton.classList.add('disabled');
-    miningText.textContent = "Mining...";
-    miningTimer.classList.remove('hidden');
-    miningButton.onclick = null;
-
-    const timer = setInterval(() => {
-        const remainingTime = miningEndTime - Date.now();
-        if (remainingTime <= 0) {
-            clearInterval(timer);
-            miningText.textContent = "Claim";
-            miningTimer.classList.add('hidden');
-            miningTimer.textContent = "";
-            miningButton.classList.remove('disabled');
-            miningButton.onclick = claimTokens;
-
-            const tokenAmount = document.createElement('span');
-            tokenAmount.id = 'token-amount';
-            tokenAmount.textContent = `+${calculateMiningReward(120)} Purr`;
-            miningButton.appendChild(tokenAmount);
-        } else {
-            const seconds = Math.floor(remainingTime / 1000);
-            miningTimer.textContent = `${seconds}s`;
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
         }
-    }, 1000);
+
+        const data = await response.json();
+        if (!data.ok) {
+            throw new Error(`API error: ${data.description}`);
+        }
+
+        return data.result;
+    } catch (error) {
+        console.error('Error creating invoice:', error);
+        showNotification('Error', 'Failed to create invoice. Please try again.');
+        return null;
+    }
+};
+
+// Функция для покупки бокса за Stars
+const buyBoxWithStars = async (stars) => {
+    try {
+        const invoiceLink = await createInvoiceLink(
+            'Purchase Box', // Название товара
+            'Get a random card by purchasing this box.', // Описание
+            'box_purchase', // Уникальный идентификатор заказа
+            stars // Количество Stars (в данном случае 1)
+        );
+
+        if (!invoiceLink) {
+            showNotification('Error', 'Failed to create invoice. Please try again.');
+            return;
+        }
+
+        Telegram.WebApp.openInvoice(invoiceLink, (status) => {
+            console.log('Invoice status:', status);
+            if (status === 'paid') {
+                showNotification('Success', 'Payment successful! Your box has been purchased.');
+                const randomCard = getRandomCard();
+                userCards.push(randomCard);
+                updateCardsList();
+                updateCardsToSell();
+                showModalWithCard(randomCard.content);
+            } else {
+                showNotification('Error', 'Payment failed. Please try again.');
+            }
+        });
+    } catch (error) {
+        console.error('Error creating invoice:', error);
+        showNotification('Error', 'Failed to create invoice. Please try again.');
+    }
+};
+
+// Обработчик события invoiceClosed
+if (window.Telegram && window.Telegram.WebApp) {
+    Telegram.WebApp.onEvent('invoiceClosed', (event) => {
+        console.log('Invoice closed with status:', event.status);
+        if (event.status === 'paid') {
+            showNotification('Success', 'Payment successful! Your box has been purchased.');
+        } else {
+            showNotification('Error', 'Payment failed. Please try again.');
+        }
+    });
 }
+
+// ================== КОНЕЦ НОВОГО ФУНКЦИОНАЛА ==================
 
 // Остальные функции (ваш текущий код)
 function showSection(sectionId) {
@@ -245,7 +194,6 @@ function purchaseUpgrade() {
     showNotification("Success", `Mining efficiency increased by ${currentUpgrade.bonus}%!`);
     currentUpgradeIndex++;
     updateUpgradeButton();
-    saveUserData();
 }
 
 function getWelcomeCard() {
@@ -254,7 +202,6 @@ function getWelcomeCard() {
     updateCardsList();
     updateCardsToSell();
     showModal();
-    saveUserData();
 }
 
 function updateCardsList() {
@@ -358,14 +305,11 @@ function closeInvalidPriceModal() {
 function startMining() {
     if (!miningActive) {
         miningActive = true;
-        miningEndTime = Date.now() + MINING_DURATION; // Устанавливаем время окончания майнинга
+        miningEndTime = Date.now() + 10 * 1000;
         miningButton.classList.add('disabled');
         miningText.textContent = "Mining...";
         miningTimer.classList.remove('hidden');
         miningButton.onclick = null;
-
-        // Сохраняем время начала майнинга
-        saveMiningData();
 
         const timer = setInterval(() => {
             const timeLeft = miningEndTime - Date.now();
@@ -406,36 +350,27 @@ function claimTokens() {
 
         const baseReward = 120;
         const totalReward = calculateMiningReward(baseReward);
-
-        // Обновляем переменную tokens сразу
-        tokens += totalReward;
-        totalMinedPurr += totalReward;
-
-        // Запускаем анимацию
         animateTokenIncrement(totalReward);
 
-        // Сохраняем данные после завершения анимации
-        setTimeout(() => {
-            saveUserData();
-        }, 1000); // Задержка равна длительности анимации (1000 мс)
-
+        totalMinedPurr += totalReward;
         updateProfileStatistics();
     }
 }
 
 function animateTokenIncrement(amount) {
-    const targetTokens = tokens; // Уже обновлено в claimTokens
+    const targetTokens = tokens + amount;
     const incrementDuration = 1000;
     const startTime = Date.now();
 
     const animation = setInterval(() => {
         const elapsedTime = Date.now() - startTime;
         if (elapsedTime >= incrementDuration) {
-            tokenDisplay.textContent = targetTokens.toString();
+            tokens = targetTokens;
+            tokenDisplay.textContent = tokens.toString();
             clearInterval(animation);
         } else {
             const progress = elapsedTime / incrementDuration;
-            const currentTokens = Math.floor(tokens - amount + amount * progress);
+            const currentTokens = Math.floor(tokens + amount * progress);
             tokenDisplay.textContent = currentTokens.toString();
         }
     }, 16);
@@ -455,7 +390,6 @@ function buyBox(cost) {
         updateCardsList();
         updateCardsToSell();
         showModalWithCard(randomCard.content);
-        saveUserData();
     } else {
         showPurrModal();
     }
@@ -525,17 +459,14 @@ function sellCard() {
     userCards.splice(selectedCardIndex, 1);
 
     const sellerUsername = Telegram.WebApp.initDataUnsafe.user?.username || "Anonymous";
-    const listing = { card: cardToSell, price: price, owner: "user", sellerUsername: sellerUsername };
-
-    // Добавляем объявление в общий список
-    addMarketListing(listing);
+    marketListings.unshift({ card: cardToSell, price: price, owner: "user", sellerUsername: sellerUsername });
 
     updateCardsToSell();
+    updateMarketListings();
     updateCardsList();
 
     showSuccessListingModal();
     closeSellCardModal();
-    saveUserData();
 }
 
 function cancelSale(listingIndex) {
@@ -559,7 +490,6 @@ function cancelSale(listingIndex) {
     updateCardsToSell();
 
     showCancelSaleModal();
-    saveUserData();
 }
 
 function updateMarketListings() {
@@ -612,6 +542,7 @@ function confirmPurchase() {
         closePurchaseConfirmModal();
     }
 }
+
 function closePurchaseConfirmModal() {
     const purchaseModal = document.getElementById('purchase-confirm-modal');
     purchaseModal.classList.add('hidden');
@@ -639,7 +570,6 @@ function buyMarketCard(index) {
     updateMarketListings();
     updateCardsList();
     showSuccessPurchaseModal();
-    saveUserData();
 }
 
 function showNotification(title, message) {
@@ -740,17 +670,12 @@ function updateProfileStatistics() {
 // Инициализация Telegram Web App
 if (window.Telegram && window.Telegram.WebApp) {
     Telegram.WebApp.ready();
-    Telegram.WebApp.expand();
 
     const user = Telegram.WebApp.initDataUnsafe.user;
     if (user) {
         const welcomeMessage = `Welcome, ${user.first_name || "User"}!`;
         document.getElementById('welcome-text').textContent = welcomeMessage;
     }
-
-    initUserData(); // Загружаем данные пользователя
-    fetchMarketListings(); // Загружаем объявления с сервера
-    loadMiningData(); // Загружаем данные о майнинге
 }
 
 // Привязка событий к кнопкам
