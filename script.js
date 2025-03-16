@@ -612,7 +612,6 @@ function confirmPurchase() {
         closePurchaseConfirmModal();
     }
 }
-
 function closePurchaseConfirmModal() {
     const purchaseModal = document.getElementById('purchase-confirm-modal');
     purchaseModal.classList.add('hidden');
