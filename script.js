@@ -160,7 +160,6 @@ function loadProgress() {
     });
 }
 
-
 // Обновление интерфейса после загрузки данных
 function updateUI() {
     tokenDisplay.textContent = tokens.toString();
@@ -171,6 +170,11 @@ function updateUI() {
         const timeLeft = miningEndTime - Date.now();
         if (timeLeft > 0) {
             // Майнинг еще активен, запускаем таймер
+            miningButton.classList.add('disabled');
+            miningText.textContent = "Mining...";
+            miningTimer.classList.remove('hidden');
+            miningButton.onclick = null;
+
             startMiningTimer(timeLeft);
         } else {
             // Майнинг завершен, показываем кнопку "Claim"
@@ -199,7 +203,6 @@ loadProgress();
 
 // ================== МАЙНИНГ НА 4 ЧАСА ==================
 
-// Функция для запуска майнинга
 function startMining() {
     if (!miningActive) {
         miningActive = true;
@@ -238,9 +241,6 @@ function startMiningTimer(duration) {
     }, 1000);
 }
 
-
-
-// ================== // Функция для завершения майнинга
 function claimTokens() {
     if (miningActive && Date.now() >= miningEndTime) {
         miningActive = false;
@@ -262,7 +262,7 @@ function claimTokens() {
     }
 }
 
-//ПРИВЕТСТВЕННАЯ КАРТОЧКА ==================
+// ================== ПРИВЕТСТВЕННАЯ КАРТОЧКА ==================
 
 function getWelcomeCard() {
     if (hasWelcomeCard) {
