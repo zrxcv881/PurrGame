@@ -160,33 +160,7 @@ function loadProgress() {
     });
 }
 
-
-
-// Загрузка прогресса при запуске приложения
-loadProgress();
-
-// ================== МАЙНИНГ НА 4 ЧАСА ==================
-
-function startMining() {
-    if (!miningActive) {
-        miningActive = true;
-        miningEndTime = Date.now() + 4 * 60 * 60 * 1000; // 4 часа
-        saveProgress();
-
-        miningButton.classList.add('disabled');
-        miningText.textContent = "Mining...";
-        miningTimer.classList.remove('hidden');
-        miningButton.onclick = null;
-
-        startMiningTimer(4 * 60 * 60 * 1000);
-    }
-}
-
-function startMiningTimer(duration) {
-    const timer = setInterval(() => {
-        const timeLeft = miningEndTime - Date.now();
-        if (timeLeft <= 0) {
-            clearInterva// Обновление интерфейса после загрузки данных
+// Обновление интерфейса после загрузки данных
 function updateUI() {
     tokenDisplay.textContent = tokens.toString();
     updateCardsList();
@@ -230,7 +204,33 @@ function updateUI() {
         miningButton.classList.remove('disabled');
         miningButton.onclick = startMining;
     }
-}l(timer);
+}
+
+// Загрузка прогресса при запуске приложения
+loadProgress();
+
+// ================== МАЙНИНГ НА 4 ЧАСА ==================
+
+function startMining() {
+    if (!miningActive) {
+        miningActive = true;
+        miningEndTime = Date.now() + 4 * 60 * 60 * 1000; // 4 часа
+        saveProgress();
+
+        miningButton.classList.add('disabled');
+        miningText.textContent = "Mining...";
+        miningTimer.classList.remove('hidden');
+        miningButton.onclick = null;
+
+        startMiningTimer(4 * 60 * 60 * 1000);
+    }
+}
+
+function startMiningTimer(duration) {
+    const timer = setInterval(() => {
+        const timeLeft = miningEndTime - Date.now();
+        if (timeLeft <= 0) {
+            clearInterval(timer);
             miningText.textContent = "Claim";
             miningTimer.classList.add('hidden');
             miningTimer.textContent = "";
@@ -272,7 +272,6 @@ function claimTokens() {
 
 // ================== ПРИВЕТСТВЕННАЯ КАРТОЧКА ==================
 
-// Функция для получения приветственной карточки
 function getWelcomeCard() {
     if (hasWelcomeCard) {
         showNotification("Info", "You have already received your welcome card.");
