@@ -160,6 +160,7 @@ function loadProgress() {
     });
 }
 
+
 // Обновление интерфейса после загрузки данных
 function updateUI() {
     tokenDisplay.textContent = tokens.toString();
@@ -185,6 +186,11 @@ function updateUI() {
             tokenAmount.textContent = `+${calculateMiningReward(120)} Purr`;
             miningButton.appendChild(tokenAmount);
         }
+    } else {
+        // Майнинг не активен, кнопка должна быть активной
+        miningText.textContent = "Mining";
+        miningButton.classList.remove('disabled');
+        miningButton.onclick = startMining;
     }
 }
 
@@ -193,6 +199,7 @@ loadProgress();
 
 // ================== МАЙНИНГ НА 4 ЧАСА ==================
 
+// Функция для запуска майнинга
 function startMining() {
     if (!miningActive) {
         miningActive = true;
@@ -231,6 +238,9 @@ function startMiningTimer(duration) {
     }, 1000);
 }
 
+
+
+// ================== // Функция для завершения майнинга
 function claimTokens() {
     if (miningActive && Date.now() >= miningEndTime) {
         miningActive = false;
@@ -250,9 +260,7 @@ function claimTokens() {
         updateProfileStatistics();
         saveProgress();
     }
-}
-
-// ================== ПРИВЕТСТВЕННАЯ КАРТОЧКА ==================
+}ПРИВЕТСТВЕННАЯ КАРТОЧКА ==================
 
 function getWelcomeCard() {
     if (hasWelcomeCard) {
