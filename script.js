@@ -9,6 +9,7 @@ let currentPurchaseIndex = null;
 let totalMinedPurr = 0;
 let totalSpentPurr = 0;
 let totalOpenedBoxes = 0;
+let hasWelcomeCard = false; // Флаг для приветственной карточки
 
 // Mining upgrades
 let miningUpgrades = [
@@ -89,6 +90,7 @@ const buyBoxWithStars = async (stars) => {
                 updateCardsList();
                 updateCardsToSell();
                 showModalWithCard(randomCard.content);
+                saveProgress(); // Сохраняем прогресс
             } else {
                 showNotification('Error', 'Payment failed. Please try again.');
             }
@@ -112,6 +114,153 @@ if (window.Telegram && window.Telegram.WebApp) {
 }
 
 // ================== КОНЕЦ НОВОГО ФУНКЦИОНАЛА ==================
+
+// ================== СОХРАНЕНИЕ ПРОГРЕССА ==================
+
+// Функция для сохранения данных в облачное хранилище
+function saveProgress() {
+    const data = {
+        tokens: tokens,
+        userCards: userCards,
+        totalMinedPurr: totalMinedPurr,
+        totalSpentPurr: totalSpentPurr,
+        totalOpenedBoxes: totalOpenedBoxes,
+        miningActive: miningActive,
+        miningEndTime: miningEndTime,
+        hasWelcomeCard: hasWelcomeCard
+    };
+
+    Telegram.WebApp.CloudStorage.setItem('userProgress', JSON.stringify(data), function(error) {
+        if (error) {
+            console.error('Error saving progress:', error);
+        } else {
+            console.log('Progress saved successfully');
+        }
+    });
+}
+
+// Функция для загрузки данных из облачного хранилища
+function loadProgress() {
+    Telegram.WebApp.CloudStorage.getItem('userProgress', function(error, value) {
+        if (error) {
+            console.error('Error loading progress:', error);
+        } else if (value) {
+            const data = JSON.parse(value);
+            tokens = data.tokens || 0;
+            userCards = data.userCards || [];
+            totalMinedPurr = data.totalMinedPurr || 0;
+            totalSpentPurr = data.totalSpentPurr || 0;
+            totalOpenedBoxes = data.totalOpenedBoxes || 0;
+            miningActive = data.miningActive || false;
+            miningEndTime = data.miningEndTime || 0;
+            hasWelcomeCard = data.hasWelcomeCard || false;
+
+            updateUI();
+        }
+    });
+}
+
+// Обновление интерфейса после загрузки данных
+function updateUI() {
+    tokenDisplay.textContent = tokens.toString();
+    updateCardsList();
+    updateProfileStatistics();
+
+    if (miningActive) {
+        const timeLeft = miningEndTime - Date.now();
+        if (timeLeft > 0) {
+            startMiningTimer(timeLeft);
+        } else {
+            miningActive = false;
+            miningText.textContent = "Claim";
+            miningButton.onclick = claimTokens;
+        }
+    }
+}
+
+// Загрузка прогресса при запуске приложения
+loadProgress();
+
+// ================== МАЙНИНГ НА 4 ЧАСА ==================
+
+function startMining() {
+    if (!miningActive) {
+        miningActive = true;
+        miningEndTime = Date.now() + 4 * 60 * 60 * 1000; // 4 часа
+        saveProgress();
+
+        miningButton.classList.add('disabled');
+        miningText.textContent = "Mining...";
+        miningTimer.classList.remove('hidden');
+        miningButton.onclick = null;
+
+        startMiningTimer(4 * 60 * 60 * 1000);
+    }
+}
+
+function startMiningTimer(duration) {
+    const timer = setInterval(() => {
+        const timeLeft = miningEndTime - Date.now();
+        if (timeLeft <= 0) {
+            clearInterval(timer);
+            miningText.textContent = "Claim";
+            miningTimer.classList.add('hidden');
+            miningTimer.textContent = "";
+            miningButton.classList.remove('disabled');
+            miningButton.onclick = claimTokens;
+
+            const tokenAmount = document.createElement('span');
+            tokenAmount.id = 'token-amount';
+            tokenAmount.textContent = `+${calculateMiningReward(120)} Purr`;
+            miningButton.appendChild(tokenAmount);
+        } else {
+            const hours = Math.floor(timeLeft / (1000 * 60 * 60));
+            const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
+            miningTimer.textContent = `${hours}h ${minutes}m`;
+        }
+    }, 1000);
+}
+
+function claimTokens() {
+    if (miningActive && Date.now() >= miningEndTime) {
+        miningActive = false;
+        miningText.textContent = "Mining";
+        miningButton.onclick = startMining;
+
+        const tokenAmount = document.getElementById('token-amount');
+        if (tokenAmount) {
+            tokenAmount.remove();
+        }
+
+        const baseReward = 120;
+        const totalReward = calculateMiningReward(baseReward);
+        animateTokenIncrement(totalReward);
+
+        totalMinedPurr += totalReward;
+        updateProfileStatistics();
+        saveProgress();
+    }
+}
+
+// ================== ПРИВЕТСТВЕННАЯ КАРТОЧКА ==================
+
+function getWelcomeCard() {
+    if (hasWelcomeCard) {
+        showNotification("Info", "You have already received your welcome card.");
+        return;
+    }
+
+    const welcomeCard = { type: "welcome", content: "🎉", owner: "user" };
+    userCards.push(welcomeCard);
+    hasWelcomeCard = true;
+    saveProgress();
+
+    updateCardsList();
+    updateCardsToSell();
+    showModal();
+}
+
+// ================== ОСТАЛЬНЫЕ ФУНКЦИИ ==================
 
 // Остальные функции (ваш текущий код)
 function showSection(sectionId) {
@@ -194,14 +343,7 @@ function purchaseUpgrade() {
     showNotification("Success", `Mining efficiency increased by ${currentUpgrade.bonus}%!`);
     currentUpgradeIndex++;
     updateUpgradeButton();
-}
-
-function getWelcomeCard() {
-    const welcomeCard = { type: "welcome", content: "🎉", owner: "user" };
-    userCards.push(welcomeCard);
-    updateCardsList();
-    updateCardsToSell();
-    showModal();
+    saveProgress(); // Сохраняем прогресс
 }
 
 function updateCardsList() {
@@ -302,59 +444,8 @@ function closeInvalidPriceModal() {
     modal.classList.add('hidden');
 }
 
-function startMining() {
-    if (!miningActive) {
-        miningActive = true;
-        miningEndTime = Date.now() + 10 * 1000;
-        miningButton.classList.add('disabled');
-        miningText.textContent = "Mining...";
-        miningTimer.classList.remove('hidden');
-        miningButton.onclick = null;
-
-        const timer = setInterval(() => {
-            const timeLeft = miningEndTime - Date.now();
-            if (timeLeft <= 0) {
-                clearInterval(timer);
-                miningText.textContent = "Claim";
-                miningTimer.classList.add('hidden');
-                miningTimer.textContent = "";
-                miningButton.classList.remove('disabled');
-                miningButton.onclick = claimTokens;
-
-                const tokenAmount = document.createElement('span');
-                tokenAmount.id = 'token-amount';
-                tokenAmount.textContent = `+${calculateMiningReward(120)} Purr`;
-                miningButton.appendChild(tokenAmount);
-            } else {
-                const seconds = Math.floor(timeLeft / 1000);
-                miningTimer.textContent = `${seconds}s`;
-            }
-        }, 1000);
-    }
-}
-
 function calculateMiningReward(baseReward) {
     return baseReward * (1 + miningEfficiency / 100);
-}
-
-function claimTokens() {
-    if (miningActive && Date.now() >= miningEndTime) {
-        miningActive = false;
-        miningText.textContent = "Mining";
-        miningButton.onclick = startMining;
-
-        const tokenAmount = document.getElementById('token-amount');
-        if (tokenAmount) {
-            tokenAmount.remove();
-        }
-
-        const baseReward = 120;
-        const totalReward = calculateMiningReward(baseReward);
-        animateTokenIncrement(totalReward);
-
-        totalMinedPurr += totalReward;
-        updateProfileStatistics();
-    }
 }
 
 function animateTokenIncrement(amount) {
@@ -390,6 +481,7 @@ function buyBox(cost) {
         updateCardsList();
         updateCardsToSell();
         showModalWithCard(randomCard.content);
+        saveProgress(); // Сохраняем прогресс
     } else {
         showPurrModal();
     }
@@ -467,6 +559,7 @@ function sellCard() {
 
     showSuccessListingModal();
     closeSellCardModal();
+    saveProgress(); // Сохраняем прогресс
 }
 
 function cancelSale(listingIndex) {
@@ -490,6 +583,7 @@ function cancelSale(listingIndex) {
     updateCardsToSell();
 
     showCancelSaleModal();
+    saveProgress(); // Сохраняем прогресс
 }
 
 function updateMarketListings() {
@@ -570,6 +664,7 @@ function buyMarketCard(index) {
     updateMarketListings();
     updateCardsList();
     showSuccessPurchaseModal();
+    saveProgress(); // Сохраняем прогресс
 }
 
 function showNotification(title, message) {
@@ -670,7 +765,7 @@ function updateProfileStatistics() {
 // Инициализация Telegram Web App
 if (window.Telegram && window.Telegram.WebApp) {
     Telegram.WebApp.ready();
-
+    Telegram.WebApp.requestFullscreen();
     const user = Telegram.WebApp.initDataUnsafe.user;
     if (user) {
         const welcomeMessage = `Welcome, ${user.first_name || "User"}!`;
