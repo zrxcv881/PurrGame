@@ -809,4 +809,4 @@ if (window.Telegram && window.Telegram.WebApp) {
 document.getElementById('mining-button').addEventListener('click', startMining);
 document.getElementById('get-card-button').addEventListener('click', getWelcomeCard);
 document.getElementById('toggle-boxes').addEventListener('click', () => showMarketSection('boxes'));
-document.getElementById('toggle-upgrades').addEventListener('click', () => showMarketSection('upgrades')); это мой жс, никак не комментируй
+document.getElementById('toggle-upgrades').addEventListener('click', () => showMarketSection('upgrades'));
