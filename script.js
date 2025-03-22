@@ -155,6 +155,11 @@ function loadProgress() {
             miningEndTime = data.miningEndTime || 0;
             hasWelcomeCard = data.hasWelcomeCard || false;
 
+            // Проверяем, завершен ли майнинг
+            if (miningActive && Date.now() >= miningEndTime) {
+                miningActive = false; // Майнинг завершен
+            }
+
             updateUI(); // Обновляем интерфейс
         }
     });
@@ -249,21 +254,27 @@ function startMiningTimer(duration) {
 
 function claimTokens() {
     if (!miningActive && Date.now() >= miningEndTime) { // Проверяем, что майнинг завершен
-        miningText.textContent = "Mining";
-        miningButton.onclick = startMining;
-
-        const tokenAmount = document.getElementById('token-amount');
-        if (tokenAmount) {
-            tokenAmount.remove();
-        }
-
         const baseReward = 120;
         const totalReward = calculateMiningReward(baseReward);
         animateTokenIncrement(totalReward);
 
         totalMinedPurr += totalReward;
         updateProfileStatistics();
+
+        // Сбрасываем состояние майнинга
+        miningActive = false;
+        miningEndTime = 0;
         saveProgress(); // Сохраняем прогресс
+
+        // Обновляем интерфейс
+        miningText.textContent = "Mining";
+        miningButton.classList.remove('disabled');
+        miningButton.onclick = startMining;
+
+        const tokenAmount = document.getElementById('token-amount');
+        if (tokenAmount) {
+            tokenAmount.remove();
+        }
     }
 }
 
