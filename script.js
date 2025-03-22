@@ -158,6 +158,7 @@ function loadProgress() {
             // Проверяем, завершен ли майнинг
             if (miningActive && Date.now() >= miningEndTime) {
                 miningActive = false; // Майнинг завершен
+                saveProgress(); // Сохраняем обновленное состояние
             }
 
             updateUI(); // Обновляем интерфейс
