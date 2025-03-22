@@ -155,7 +155,7 @@ function loadProgress() {
             miningEndTime = data.miningEndTime || 0;
             hasWelcomeCard = data.hasWelcomeCard || false;
 
-            updateUI();
+            updateUI(); // Обновляем интерфейс после загрузки данных
         }
     });
 }
@@ -214,7 +214,7 @@ loadProgress();
 function startMining() {
     if (!miningActive) {
         miningActive = true;
-        miningEndTime = Date.now() + 4 * 60 * 60 * 1000; // 4 часа
+        miningEndTime = Date.now() + 30 * 1000; // 30 секунд
         saveProgress();
 
         miningButton.classList.add('disabled');
@@ -222,7 +222,7 @@ function startMining() {
         miningTimer.classList.remove('hidden');
         miningButton.onclick = null;
 
-        startMiningTimer(4 * 60 * 60 * 1000);
+        startMiningTimer(30 * 1000); // Запускаем таймер на 30 секунд
     }
 }
 
@@ -242,31 +242,35 @@ function startMiningTimer(duration) {
             tokenAmount.textContent = `+${calculateMiningReward(120)} Purr`;
             miningButton.appendChild(tokenAmount);
         } else {
-            const hours = Math.floor(timeLeft / (1000 * 60 * 60));
-            const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
-            miningTimer.textContent = `${hours}h ${minutes}m`;
+            const seconds = Math.floor(timeLeft / 1000); // Отображаем только секунды
+            miningTimer.textContent = `${seconds}s`;
         }
     }, 1000);
 }
 
 function claimTokens() {
     if (miningActive && Date.now() >= miningEndTime) {
-        miningActive = false;
+        miningActive = false; // Майнинг завершен
         miningText.textContent = "Mining";
-        miningButton.onclick = startMining;
+        miningButton.onclick = startMining; // Возвращаем обработчик для запуска майнинга
 
+        // Убираем таймер и сообщение о награде
         const tokenAmount = document.getElementById('token-amount');
         if (tokenAmount) {
             tokenAmount.remove();
         }
 
+        // Вычисляем и добавляем награду
         const baseReward = 120;
         const totalReward = calculateMiningReward(baseReward);
         animateTokenIncrement(totalReward);
 
+        // Обновляем статистику
         totalMinedPurr += totalReward;
         updateProfileStatistics();
-        saveProgress();
+        saveProgress(); // Сохраняем прогресс
+    } else {
+        showNotification("Info", "Mining is still in progress. Please wait.");
     }
 }
 
