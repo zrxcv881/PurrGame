@@ -190,7 +190,7 @@ function updateUI() {
             miningTimer.classList.add('hidden');
             miningTimer.textContent = "";
             miningButton.classList.remove('disabled');
-            miningButton.onclick = claimTokens;
+            miningButton.onclick = claimTokens; // Убедитесь, что это claimTokens, а не startMining
 
             const tokenAmount = document.createElement('span');
             tokenAmount.id = 'token-amount';
@@ -248,8 +248,7 @@ function startMiningTimer(duration) {
 }
 
 function claimTokens() {
-    if (miningActive && Date.now() >= miningEndTime) {
-        miningActive = false;
+    if (!miningActive && Date.now() >= miningEndTime) { // Проверяем, что майнинг завершен
         miningText.textContent = "Mining";
         miningButton.onclick = startMining;
 
@@ -264,7 +263,7 @@ function claimTokens() {
 
         totalMinedPurr += totalReward;
         updateProfileStatistics();
-        saveProgress();
+        saveProgress(); // Сохраняем прогресс
     }
 }
 
