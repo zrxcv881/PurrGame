@@ -28,93 +28,6 @@ const miningTimer = document.getElementById('mining-timer');
 const getCardButton = document.getElementById('get-card-button');
 const marketListingsContainer = document.getElementById('market-listings-container');
 
-// ================== НОВЫЙ ФУНКЦИОНАЛ: ОПЛАТА ЗА 1 TELEGRAM STAR ==================
-
-// Функция для создания инвойса
-const createInvoiceLink = async (title, description, payload, price) => {
-    try {
-        const response = await fetch(`https://api.telegram.org/bot7879732935:AAHpo1NIdQJXUMVCuVXYupEGsqo6-PY0Wjg/createInvoiceLink`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                title: title,
-                description: description,
-                payload: payload,
-                provider_token: '', // Не требуется для Telegram Stars
-                currency: 'XTR', // Валюта Telegram Stars
-                prices: [{ label: '1 Box', amount: price * 1 }], // 1 Star = 100
-            }),
-            signal: AbortSignal.timeout(5000), // Тайм-аут 5 секунд
-        });
-
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        const data = await response.json();
-        if (!data.ok) {
-            throw new Error(`API error: ${data.description}`);
-        }
-
-        return data.result;
-    } catch (error) {
-        console.error('Error creating invoice:', error);
-        showNotification('Error', 'Failed to create invoice. Please try again.');
-        return null;
-    }
-};
-
-// Функция для покупки бокса за Stars
-const buyBoxWithStars = async (stars) => {
-    try {
-        const invoiceLink = await createInvoiceLink(
-            'Purchase Box', // Название товара
-            'Get a random card by purchasing this box.', // Описание
-            'box_purchase', // Уникальный идентификатор заказа
-            stars // Количество Stars (в данном случае 1)
-        );
-
-        if (!invoiceLink) {
-            showNotification('Error', 'Failed to create invoice. Please try again.');
-            return;
-        }
-
-        Telegram.WebApp.openInvoice(invoiceLink, (status) => {
-            console.log('Invoice status:', status);
-            if (status === 'paid') {
-                showNotification('Success', 'Payment successful! Your box has been purchased.');
-                const randomCard = getRandomCard();
-                userCards.push(randomCard);
-                updateCardsList();
-                updateCardsToSell();
-                showModalWithCard(randomCard.content);
-                saveProgress(); // Сохраняем прогресс
-            } else {
-                showNotification('Error', 'Payment failed. Please try again.');
-            }
-        });
-    } catch (error) {
-        console.error('Error creating invoice:', error);
-        showNotification('Error', 'Failed to create invoice. Please try again.');
-    }
-};
-
-// Обработчик события invoiceClosed
-if (window.Telegram && window.Telegram.WebApp) {
-    Telegram.WebApp.onEvent('invoiceClosed', (event) => {
-        console.log('Invoice closed with status:', event.status);
-        if (event.status === 'paid') {
-            showNotification('Success', 'Payment successful! Your box has been purchased.');
-        } else {
-            showNotification('Error', 'Payment failed. Please try again.');
-        }
-    });
-}
-
-// ================== КОНЕЦ НОВОГО ФУНКЦИОНАЛА ==================
-
 // ================== СОХРАНЕНИЕ ПРОГРЕССА ==================
 
 // Функция для сохранения данных в облачное хранилище
@@ -166,56 +79,10 @@ function loadProgress() {
     });
 }
 
-// Обновление интерфейса после загрузки данных
-function updateUI() {
-    tokenDisplay.textContent = tokens.toString();
-    updateCardsList();
-    updateProfileStatistics();
-
-    // Скрываем кнопку, если приветственная карточка уже получена
-    const getCardButton = document.getElementById('get-card-button');
-    if (hasWelcomeCard) {
-        getCardButton.classList.add('hidden');
-    } else {
-        getCardButton.classList.remove('hidden');
-    }
-
-    if (miningActive) {
-        const timeLeft = miningEndTime - Date.now();
-        if (timeLeft > 0) {
-            // Майнинг еще активен, запускаем таймер
-            miningButton.classList.add('disabled');
-            miningText.textContent = "Mining...";
-            miningTimer.classList.remove('hidden');
-            miningButton.onclick = null;
-
-            startMiningTimer(timeLeft);
-        } else {
-            // Майнинг завершен, показываем кнопку "Claim"
-            miningActive = false;
-            miningText.textContent = "Claim";
-            miningTimer.classList.add('hidden');
-            miningTimer.textContent = "";
-            miningButton.classList.remove('disabled');
-            miningButton.onclick = claimTokens;
-
-            const tokenAmount = document.createElement('span');
-            tokenAmount.id = 'token-amount';
-            tokenAmount.textContent = `+${calculateMiningReward(120)} Purr`;
-            miningButton.appendChild(tokenAmount);
-        }
-    } else {
-        // Майнинг не активен, кнопка должна быть активной
-        miningText.textContent = "Mining";
-        miningButton.classList.remove('disabled');
-        miningButton.onclick = startMining;
-    }
-}
-
 // Загрузка прогресса при запуске приложения
 loadProgress();
 
-// ================== МАЙНИНГ НА 4 ЧАСА ==================
+// ================== МАЙНИНГ ==================
 
 function startMining() {
     if (!miningActive) {
@@ -305,7 +172,6 @@ function getWelcomeCard() {
 
 // ================== ОСТАЛЬНЫЕ ФУНКЦИИ ==================
 
-// Остальные функции (ваш текущий код)
 function showSection(sectionId) {
     document.querySelectorAll('.content').forEach(div => {
         div.classList.remove('active');
