@@ -155,7 +155,13 @@ function loadProgress() {
             miningEndTime = data.miningEndTime || 0;
             hasWelcomeCard = data.hasWelcomeCard || false;
 
-            updateUI(); // Обновляем интерфейс после загрузки данных
+            // Проверяем, завершился ли майнинг
+            if (miningActive && Date.now() >= miningEndTime) {
+                miningActive = false; // Майнинг завершен
+                saveProgress(); // Сохраняем обновленное состояние
+            }
+
+            updateUI(); // Обновляем интерфейс
         }
     });
 }
@@ -249,17 +255,7 @@ function startMiningTimer(duration) {
 }
 
 function claimTokens() {
-    if (miningActive && Date.now() >= miningEndTime) {
-        miningActive = false; // Майнинг завершен
-        miningText.textContent = "Mining";
-        miningButton.onclick = startMining; // Возвращаем обработчик для запуска майнинга
-
-        // Убираем таймер и сообщение о награде
-        const tokenAmount = document.getElementById('token-amount');
-        if (tokenAmount) {
-            tokenAmount.remove();
-        }
-
+    if (!miningActive && Date.now() >= miningEndTime) {
         // Вычисляем и добавляем награду
         const baseReward = 120;
         const totalReward = calculateMiningReward(baseReward);
@@ -269,6 +265,17 @@ function claimTokens() {
         totalMinedPurr += totalReward;
         updateProfileStatistics();
         saveProgress(); // Сохраняем прогресс
+
+        // Возвращаем кнопку в состояние "Mining"
+        miningText.textContent = "Mining";
+        miningButton.classList.remove('disabled');
+        miningButton.onclick = startMining;
+
+        // Убираем сообщение о награде
+        const tokenAmount = document.getElementById('token-amount');
+        if (tokenAmount) {
+            tokenAmount.remove();
+        }
     } else {
         showNotification("Info", "Mining is still in progress. Please wait.");
     }
