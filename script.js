@@ -166,7 +166,6 @@ function updateUI() {
     updateCardsList();
     updateProfileStatistics();
 
-    // Скрываем кнопку, если приветственная карточка уже получена
     const getCardButton = document.getElementById('get-card-button');
     if (hasWelcomeCard) {
         getCardButton.classList.add('hidden');
@@ -177,7 +176,6 @@ function updateUI() {
     if (miningActive) {
         const timeLeft = miningEndTime - Date.now();
         if (timeLeft > 0) {
-            // Майнинг еще активен, запускаем таймер
             miningButton.classList.add('disabled');
             miningText.textContent = "Mining...";
             miningTimer.classList.remove('hidden');
@@ -185,7 +183,6 @@ function updateUI() {
 
             startMiningTimer(timeLeft);
         } else {
-            // Майнинг завершен, показываем кнопку "Claim"
             miningActive = false;
             miningText.textContent = "Claim";
             miningTimer.classList.add('hidden');
@@ -199,7 +196,6 @@ function updateUI() {
             miningButton.appendChild(tokenAmount);
         }
     } else {
-        // Майнинг не активен, кнопка должна быть активной
         miningText.textContent = "Mining";
         miningButton.classList.remove('disabled');
         miningButton.onclick = startMining;
@@ -214,7 +210,7 @@ loadProgress();
 function startMining() {
     if (!miningActive) {
         miningActive = true;
-        miningEndTime = Date.now() + 4 * 60 * 60 * 1000; // 4 часа
+        miningEndTime = Date.now() + 10 * 1000; // 10 секунд
         saveProgress();
 
         miningButton.classList.add('disabled');
@@ -222,7 +218,7 @@ function startMining() {
         miningTimer.classList.remove('hidden');
         miningButton.onclick = null;
 
-        startMiningTimer(4 * 60 * 60 * 1000);
+        startMiningTimer(10 * 1000); // 10 секунд
     }
 }
 
@@ -242,9 +238,8 @@ function startMiningTimer(duration) {
             tokenAmount.textContent = `+${calculateMiningReward(120)} Purr`;
             miningButton.appendChild(tokenAmount);
         } else {
-            const hours = Math.floor(timeLeft / (1000 * 60 * 60));
-            const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
-            miningTimer.textContent = `${hours}h ${minutes}m`;
+            const seconds = Math.floor(timeLeft / 1000);
+            miningTimer.textContent = `${seconds}s`; // Отображаем оставшееся время в секундах
         }
     }, 1000);
 }
