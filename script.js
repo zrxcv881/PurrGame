@@ -255,7 +255,11 @@ function startMiningTimer(duration) {
 }
 
 function claimTokens() {
-    if (!miningActive && Date.now() >= miningEndTime) {
+    // Проверяем, завершился ли майнинг
+    if (miningActive && Date.now() >= miningEndTime) {
+        miningActive = false; // Майнинг завершен
+        saveProgress(); // Сохраняем обновленное состояние
+
         // Вычисляем и добавляем награду
         const baseReward = 120;
         const totalReward = calculateMiningReward(baseReward);
@@ -276,8 +280,12 @@ function claimTokens() {
         if (tokenAmount) {
             tokenAmount.remove();
         }
-    } else {
+    } else if (miningActive) {
+        // Майнинг все еще активен
         showNotification("Info", "Mining is still in progress. Please wait.");
+    } else {
+        // Майнинг не активен
+        showNotification("Info", "No mining session to claim.");
     }
 }
 
