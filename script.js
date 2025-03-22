@@ -155,7 +155,7 @@ function loadProgress() {
             miningEndTime = data.miningEndTime || 0;
             hasWelcomeCard = data.hasWelcomeCard || false;
 
-            updateUI();
+            updateUI(); // Обновляем интерфейс
         }
     });
 }
@@ -176,6 +176,7 @@ function updateUI() {
     if (miningActive) {
         const timeLeft = miningEndTime - Date.now();
         if (timeLeft > 0) {
+            // Майнинг еще активен, запускаем таймер
             miningButton.classList.add('disabled');
             miningText.textContent = "Mining...";
             miningTimer.classList.remove('hidden');
@@ -183,6 +184,7 @@ function updateUI() {
 
             startMiningTimer(timeLeft);
         } else {
+            // Майнинг завершен, показываем кнопку "Claim"
             miningActive = false;
             miningText.textContent = "Claim";
             miningTimer.classList.add('hidden');
@@ -196,6 +198,7 @@ function updateUI() {
             miningButton.appendChild(tokenAmount);
         }
     } else {
+        // Майнинг не активен, кнопка должна быть активной
         miningText.textContent = "Mining";
         miningButton.classList.remove('disabled');
         miningButton.onclick = startMining;
@@ -211,7 +214,7 @@ function startMining() {
     if (!miningActive) {
         miningActive = true;
         miningEndTime = Date.now() + 10 * 1000; // 10 секунд
-        saveProgress();
+        saveProgress(); // Сохраняем состояние майнинга
 
         miningButton.classList.add('disabled');
         miningText.textContent = "Mining...";
