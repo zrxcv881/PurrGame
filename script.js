@@ -139,7 +139,7 @@ function saveProgress() {
     });
 }
 
-// Функция для загрузки данных из облачного хранилища
+// Функция для сохранения прогресса
 function saveProgress() {
     const data = {
         tokens: tokens,
@@ -162,6 +162,7 @@ function saveProgress() {
 }
 
 // Функция для загрузки данных из облачного хранилища
+// Функция для загрузки прогресса
 function loadProgress() {
     Telegram.WebApp.CloudStorage.getItem('userProgress', function(error, value) {
         if (error) {
@@ -182,6 +183,10 @@ function loadProgress() {
                 miningActive = false; // Майнинг завершен
                 saveProgress(); // Сохраняем обновленное состояние
                 showClaimButton(); // Показываем кнопку "Claim"
+            } else if (miningActive) {
+                // Майнинг еще активен, запускаем таймер
+                const timeLeft = miningEndTime - Date.now();
+                startMiningTimer(timeLeft);
             }
 
             updateUI(); // Обновляем интерфейс
@@ -189,6 +194,7 @@ function loadProgress() {
     });
 }
 
+// Функция для показа кнопки "Claim"
 // Функция для показа кнопки "Claim"
 function showClaimButton() {
     miningText.textContent = "Claim";
@@ -202,6 +208,7 @@ function showClaimButton() {
     tokenAmount.textContent = `+${calculateMiningReward(120)} Purr`;
     miningButton.appendChild(tokenAmount);
 }
+
 
 // Обновление интерфейса после загрузки данных
 function updateUI() {
@@ -243,10 +250,11 @@ loadProgress();
 
 // ================== МАЙНИНГ НА 4 ЧАСА ==================
 
+// Функция для запуска майнинга
 function startMining() {
     if (!miningActive) {
         miningActive = true;
-        miningEndTime = Date.now() + 10 * 1000; // 10 секунд
+        miningEndTime = Date.now() + 10 * 1000; // 10 секунд для теста (замените на 4 часа: 4 * 60 * 60 * 1000)
         saveProgress(); // Сохраняем состояние майнинга
 
         miningButton.classList.add('disabled');
@@ -254,7 +262,7 @@ function startMining() {
         miningTimer.classList.remove('hidden');
         miningButton.onclick = null;
 
-        startMiningTimer(10 * 1000); // 10 секунд
+        startMiningTimer(10 * 1000); // 10 секунд для теста
     }
 }
 
@@ -266,13 +274,13 @@ function startMiningTimer(duration) {
             showClaimButton();
         } else {
             const seconds = Math.floor(timeLeft / 1000);
-            miningTimer.textContent = `${seconds}s`; // Отображаем оставшееся время в секундах
+            miningTimer.textContent = `${seconds}s`;
         }
     }, 1000);
 }
 
 function claimTokens() {
-    if (Date.now() >= miningEndTime) { // Проверяем, что майнинг завершен
+    if (Date.now() >= miningEndTime) {
         const baseReward = 120;
         const totalReward = calculateMiningReward(baseReward);
         animateTokenIncrement(totalReward);
