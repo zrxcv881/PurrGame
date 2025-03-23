@@ -117,27 +117,6 @@ if (window.Telegram && window.Telegram.WebApp) {
 
 // ================== СОХРАНЕНИЕ ПРОГРЕССА ==================
 
-// Функция для сохранения данных в облачное хранилище
-function saveProgress() {
-    const data = {
-        tokens: tokens,
-        userCards: userCards,
-        totalMinedPurr: totalMinedPurr,
-        totalSpentPurr: totalSpentPurr,
-        totalOpenedBoxes: totalOpenedBoxes,
-        miningActive: miningActive,
-        miningEndTime: miningEndTime,
-        hasWelcomeCard: hasWelcomeCard
-    };
-
-    Telegram.WebApp.CloudStorage.setItem('userProgress', JSON.stringify(data), function(error) {
-        if (error) {
-            console.error('Error saving progress:', error);
-        } else {
-            console.log('Progress saved successfully');
-        }
-    });
-}
 
 // Функция для сохранения прогресса
 function saveProgress() {
@@ -178,6 +157,9 @@ function loadProgress() {
             miningEndTime = data.miningEndTime || 0;
             hasWelcomeCard = data.hasWelcomeCard || false;
 
+            // Обновляем интерфейс
+            updateUI();
+
             // Проверяем, завершен ли майнинг
             if (miningActive && Date.now() >= miningEndTime) {
                 miningActive = false; // Майнинг завершен
@@ -188,8 +170,6 @@ function loadProgress() {
                 const timeLeft = miningEndTime - Date.now();
                 startMiningTimer(timeLeft);
             }
-
-            updateUI(); // Обновляем интерфейс
         }
     });
 }
@@ -216,32 +196,24 @@ function updateUI() {
     updateCardsList();
     updateProfileStatistics();
 
+    // Обновляем кнопку майнинга
+    if (miningActive) {
+        miningButton.classList.add('disabled');
+        miningText.textContent = "Mining...";
+        miningTimer.classList.remove('hidden');
+        miningButton.onclick = null;
+    } else {
+        miningText.textContent = "Mining";
+        miningButton.classList.remove('disabled');
+        miningButton.onclick = startMining;
+    }
+
+    // Обновляем кнопку получения карточки
     const getCardButton = document.getElementById('get-card-button');
     if (hasWelcomeCard) {
         getCardButton.classList.add('hidden');
     } else {
         getCardButton.classList.remove('hidden');
-    }
-
-    if (miningActive) {
-        const timeLeft = miningEndTime - Date.now();
-        if (timeLeft > 0) {
-            // Майнинг еще активен, запускаем таймер
-            miningButton.classList.add('disabled');
-            miningText.textContent = "Mining...";
-            miningTimer.classList.remove('hidden');
-            miningButton.onclick = null;
-
-            startMiningTimer(timeLeft);
-        } else {
-            // Майнинг завершен, показываем кнопку "Claim"
-            showClaimButton();
-        }
-    } else {
-        // Майнинг не активен, кнопка должна быть активной
-        miningText.textContent = "Mining";
-        miningButton.classList.remove('disabled');
-        miningButton.onclick = startMining;
     }
 }
 
