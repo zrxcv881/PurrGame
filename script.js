@@ -271,6 +271,21 @@ function startMiningTimer(duration) {
     }, 1000);
 }
 
+function showClaimButton() {
+    miningButton.classList.remove('mining-button');
+    miningButton.classList.add('claim-button');
+    miningText.textContent = "Claim";
+    miningTimer.classList.add('hidden');
+    miningTimer.textContent = "";
+    miningButton.classList.remove('disabled');
+    miningButton.onclick = claimTokens;
+
+    const tokenAmount = document.createElement('span');
+    tokenAmount.id = 'token-amount';
+    tokenAmount.textContent = `+${calculateMiningReward(120)} Purr`;
+    miningButton.appendChild(tokenAmount);
+}
+
 function claimTokens() {
     if (Date.now() >= miningEndTime) { // Проверяем, что майнинг завершен
         const baseReward = 120;
@@ -286,6 +301,8 @@ function claimTokens() {
         saveProgress(); // Сохраняем прогресс
 
         // Обновляем интерфейс
+        miningButton.classList.remove('claim-button');
+        miningButton.classList.add('mining-button');
         miningText.textContent = "Mining";
         miningButton.classList.remove('disabled');
         miningButton.onclick = startMining;
