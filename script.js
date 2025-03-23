@@ -159,6 +159,18 @@ function loadProgress() {
             if (miningActive && Date.now() >= miningEndTime) {
                 miningActive = false; // Майнинг завершен
                 saveProgress(); // Сохраняем обновленное состояние
+                
+                // Обновляем UI сразу, чтобы отобразить кнопку "Claim"
+                miningText.textContent = "Claim";
+                miningTimer.classList.add('hidden');
+                miningTimer.textContent = "";
+                miningButton.classList.remove('disabled');
+                miningButton.onclick = claimTokens;
+
+                const tokenAmount = document.createElement('span');
+                tokenAmount.id = 'token-amount';
+                tokenAmount.textContent = `+${calculateMiningReward(120)} Purr`;
+                miningButton.appendChild(tokenAmount);
             }
 
             updateUI(); // Обновляем интерфейс
@@ -196,7 +208,7 @@ function updateUI() {
             miningTimer.classList.add('hidden');
             miningTimer.textContent = "";
             miningButton.classList.remove('disabled');
-            miningButton.onclick = claimTokens; // Убедитесь, что это claimTokens, а не startMining
+            miningButton.onclick = claimTokens;
 
             const tokenAmount = document.createElement('span');
             tokenAmount.id = 'token-amount';
@@ -254,7 +266,7 @@ function startMiningTimer(duration) {
 }
 
 function claimTokens() {
-    if (!miningActive && Date.now() >= miningEndTime) { // Проверяем, что майнинг завершен
+    if (Date.now() >= miningEndTime) { // Убрана лишняя проверка miningActive
         const baseReward = 120;
         const totalReward = calculateMiningReward(baseReward);
         animateTokenIncrement(totalReward);
