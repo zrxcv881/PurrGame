@@ -181,8 +181,14 @@ function showClaimButton() {
     miningTimer.classList.add('hidden');
     miningTimer.textContent = "";
     miningButton.classList.remove('disabled');
+
+    // Удаляем старый обработчик, если он есть
+    miningButton.onclick = null;
+
+    // Привязываем кнопку к функции claimTokens
     miningButton.onclick = claimTokens;
 
+    // Добавляем количество токенов для сбора
     const tokenAmount = document.createElement('span');
     tokenAmount.id = 'token-amount';
     tokenAmount.textContent = `+${calculateMiningReward(120)} Purr`;
@@ -270,6 +276,7 @@ function claimTokens() {
         miningButton.classList.remove('disabled');
         miningButton.onclick = startMining;
 
+        // Удаляем элемент с количеством токенов
         const tokenAmount = document.getElementById('token-amount');
         if (tokenAmount) {
             tokenAmount.remove();
