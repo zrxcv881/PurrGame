@@ -20,6 +20,15 @@ let miningUpgrades = [
 let miningEfficiency = 0;
 let currentUpgradeIndex = 0;
 
+// Mining speed upgrades
+let miningSpeedUpgrades = [
+    { level: 1, cost: 2000, bonus: 10, purchased: false }, // Уменьшает время на 10%
+    { level: 2, cost: 5000, bonus: 20, purchased: false }, // Уменьшает время на 20%
+    { level: 3, cost: 10000, bonus: 30, purchased: false }  // Уменьшает время на 30%
+];
+let currentMiningSpeedUpgradeIndex = 0;
+let miningSpeedBonus = 0;
+
 // DOM Elements
 const tokenDisplay = document.getElementById('token-count');
 const miningButton = document.getElementById('mining-button');
@@ -28,97 +37,58 @@ const miningTimer = document.getElementById('mining-timer');
 const getCardButton = document.getElementById('get-card-button');
 const marketListingsContainer = document.getElementById('market-listings-container');
 
-// ================== НОВЫЙ ФУНКЦИОНАЛ: ОПЛАТА ЗА 1 TELEGRAM STAR ==================
+// ================== НОВЫЙ ФУНКЦИОНАЛ: УЛУЧШЕНИЕ СКОРОСТИ МАЙНИНГА ==================
 
-// Функция для создания инвойса
-const createInvoiceLink = async (title, description, payload, price) => {
-    try {
-        const response = await fetch(`https://api.telegram.org/bot7879732935:AAHpo1NIdQJXUMVCuVXYupEGsqo6-PY0Wjg/createInvoiceLink`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                title: title,
-                description: description,
-                payload: payload,
-                provider_token: '', // Не требуется для Telegram Stars
-                currency: 'XTR', // Валюта Telegram Stars
-                prices: [{ label: '1 Box', amount: price * 1 }], // 1 Star = 100
-            }),
-            signal: AbortSignal.timeout(5000), // Тайм-аут 5 секунд
-        });
-
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        const data = await response.json();
-        if (!data.ok) {
-            throw new Error(`API error: ${data.description}`);
-        }
-
-        return data.result;
-    } catch (error) {
-        console.error('Error creating invoice:', error);
-        showNotification('Error', 'Failed to create invoice. Please try again.');
-        return null;
+// Функция для покупки улучшения скорости майнинга
+function purchaseMiningSpeedUpgrade() {
+    if (currentMiningSpeedUpgradeIndex >= miningSpeedUpgrades.length) {
+        showNotification("Info", "Mining speed is fully upgraded!");
+        return;
     }
-};
 
-// Функция для покупки бокса за Stars
-const buyBoxWithStars = async (stars) => {
-    try {
-        const invoiceLink = await createInvoiceLink(
-            'Purchase Box', // Название товара
-            'Get a random card by purchasing this box.', // Описание
-            'box_purchase', // Уникальный идентификатор заказа
-            stars // Количество Stars (в данном случае 1)
-        );
-
-        if (!invoiceLink) {
-            showNotification('Error', 'Failed to create invoice. Please try again.');
-            return;
-        }
-
-        Telegram.WebApp.openInvoice(invoiceLink, (status) => {
-            console.log('Invoice status:', status);
-            if (status === 'paid') {
-                showNotification('Success', 'Payment successful! Your box has been purchased.');
-                const randomCard = getRandomCard();
-                userCards.push(randomCard);
-                updateCardsList();
-                updateCardsToSell();
-                showModalWithCard(randomCard.content);
-                saveProgress(); // Сохраняем прогресс
-            } else {
-                showNotification('Error', 'Payment failed. Please try again.');
-            }
-        });
-    } catch (error) {
-        console.error('Error creating invoice:', error);
-        showNotification('Error', 'Failed to create invoice. Please try again.');
+    const currentUpgrade = miningSpeedUpgrades[currentMiningSpeedUpgradeIndex];
+    if (tokens < currentUpgrade.cost) {
+        showNotEnoughPurrModal();
+        return;
     }
-};
 
-// Обработчик события invoiceClosed
-if (window.Telegram && window.Telegram.WebApp) {
-    Telegram.WebApp.onEvent('invoiceClosed', (event) => {
-        console.log('Invoice closed with status:', event.status);
-        if (event.status === 'paid') {
-            showNotification('Success', 'Payment successful! Your box has been purchased.');
-        } else {
-            showNotification('Error', 'Payment failed. Please try again.');
-        }
-    });
+    tokens -= currentUpgrade.cost;
+    tokenDisplay.textContent = tokens.toString();
+
+    currentUpgrade.purchased = true;
+    miningSpeedBonus += currentUpgrade.bonus;
+
+    showNotification("Success", `Mining speed increased by ${currentUpgrade.bonus}%!`);
+    currentMiningSpeedUpgradeIndex++;
+    updateMiningSpeedUpgradeButton();
+    saveProgress(); // Сохраняем прогресс
+}
+
+// Функция для обновления кнопки улучшения скорости майнинга
+function updateMiningSpeedUpgradeButton() {
+    const upgradeButton = document.getElementById('upgrade-mining-speed-button');
+    if (currentMiningSpeedUpgradeIndex >= miningSpeedUpgrades.length) {
+        upgradeButton.textContent = "Mining Speed Fully Upgraded!";
+        upgradeButton.classList.add('disabled');
+        return;
+    }
+
+    const currentUpgrade = miningSpeedUpgrades[currentMiningSpeedUpgradeIndex];
+    upgradeButton.textContent = `Upgrade Mining Speed (Level ${currentUpgrade.level}): -${currentUpgrade.bonus}% (${currentUpgrade.cost} Purr)`;
+    upgradeButton.classList.remove('disabled');
+}
+
+// Функция для расчета времени майнинга с учетом бонуса скорости
+function getMiningDuration() {
+    const baseDuration = 10 * 1000; // 10 секунд для теста (замените на 4 часа: 4 * 60 * 60 * 1000)
+    return baseDuration * (1 - miningSpeedBonus / 100);
 }
 
 // ================== КОНЕЦ НОВОГО ФУНКЦИОНАЛА ==================
 
 // ================== СОХРАНЕНИЕ ПРОГРЕССА ==================
 
-
-// Функция для сохранения прогресса
+// Функция для сохранения данных в облачное хранилище
 function saveProgress() {
     const data = {
         tokens: tokens,
@@ -128,7 +98,11 @@ function saveProgress() {
         totalOpenedBoxes: totalOpenedBoxes,
         miningActive: miningActive,
         miningEndTime: miningEndTime,
-        hasWelcomeCard: hasWelcomeCard
+        hasWelcomeCard: hasWelcomeCard,
+        miningEfficiency: miningEfficiency,
+        currentUpgradeIndex: currentUpgradeIndex,
+        miningSpeedBonus: miningSpeedBonus,
+        currentMiningSpeedUpgradeIndex: currentMiningSpeedUpgradeIndex
     };
 
     Telegram.WebApp.CloudStorage.setItem('userProgress', JSON.stringify(data), function(error) {
@@ -141,7 +115,6 @@ function saveProgress() {
 }
 
 // Функция для загрузки данных из облачного хранилища
-// Функция для загрузки прогресса
 function loadProgress() {
     Telegram.WebApp.CloudStorage.getItem('userProgress', function(error, value) {
         if (error) {
@@ -156,6 +129,10 @@ function loadProgress() {
             miningActive = data.miningActive || false;
             miningEndTime = data.miningEndTime || 0;
             hasWelcomeCard = data.hasWelcomeCard || false;
+            miningEfficiency = data.miningEfficiency || 0;
+            currentUpgradeIndex = data.currentUpgradeIndex || 0;
+            miningSpeedBonus = data.miningSpeedBonus || 0;
+            currentMiningSpeedUpgradeIndex = data.currentMiningSpeedUpgradeIndex || 0;
 
             // Обновляем интерфейс
             updateUI();
@@ -174,65 +151,13 @@ function loadProgress() {
     });
 }
 
-// Функция для показа кнопки "Claim"
-// Функция для показа кнопки "Claim"
-function showClaimButton() {
-    miningText.textContent = "Claim";
-    miningTimer.classList.add('hidden');
-    miningTimer.textContent = "";
-    miningButton.classList.remove('disabled');
-
-    // Удаляем старый обработчик, если он есть
-    miningButton.onclick = null;
-
-    // Привязываем кнопку к функции claimTokens
-    miningButton.onclick = claimTokens;
-
-    // Добавляем количество токенов для сбора
-    const tokenAmount = document.createElement('span');
-    tokenAmount.id = 'token-amount';
-    tokenAmount.textContent = `+${calculateMiningReward(120)} Purr`;
-    miningButton.appendChild(tokenAmount);
-}
-
-
-// Обновление интерфейса после загрузки данных
-function updateUI() {
-    tokenDisplay.textContent = tokens.toString();
-    updateCardsList();
-    updateProfileStatistics();
-
-    // Обновляем кнопку майнинга
-    if (miningActive) {
-        miningButton.classList.add('disabled');
-        miningText.textContent = "Mining...";
-        miningTimer.classList.remove('hidden');
-        miningButton.onclick = null;
-    } else {
-        miningText.textContent = "Mining";
-        miningButton.classList.remove('disabled');
-        miningButton.onclick = startMining;
-    }
-
-    // Обновляем кнопку получения карточки
-    const getCardButton = document.getElementById('get-card-button');
-    if (hasWelcomeCard) {
-        getCardButton.classList.add('hidden');
-    } else {
-        getCardButton.classList.remove('hidden');
-    }
-}
-
-// Загрузка прогресса при запуске приложения
-loadProgress();
-
-// ================== МАЙНИНГ НА 4 ЧАСА ==================
+// ================== МАЙНИНГ ==================
 
 // Функция для запуска майнинга
 function startMining() {
     if (!miningActive) {
         miningActive = true;
-        miningEndTime = Date.now() + 10 * 1000; // 10 секунд для теста (замените на 4 часа: 4 * 60 * 60 * 1000)
+        miningEndTime = Date.now() + getMiningDuration(); // Время майнинга с учетом бонуса скорости
         saveProgress(); // Сохраняем состояние майнинга
 
         miningButton.classList.add('disabled');
@@ -240,10 +165,11 @@ function startMining() {
         miningTimer.classList.remove('hidden');
         miningButton.onclick = null;
 
-        startMiningTimer(10 * 1000); // 10 секунд для теста
+        startMiningTimer(getMiningDuration());
     }
 }
 
+// Функция для запуска таймера майнинга
 function startMiningTimer(duration) {
     const timer = setInterval(() => {
         const timeLeft = miningEndTime - Date.now();
@@ -257,6 +183,29 @@ function startMiningTimer(duration) {
     }, 1000);
 }
 
+// Функция для показа кнопки "Claim"
+function showClaimButton() {
+    miningText.textContent = "Claim";
+    miningTimer.classList.add('hidden');
+    miningTimer.textContent = "";
+    miningButton.classList.remove('disabled');
+
+    // Удаляем старый обработчик, если он есть
+    miningButton.onclick = null;
+
+    // Привязываем кнопку к функции claimTokens
+    miningButton.onclick = function() {
+        claimTokens();
+    };
+
+    // Добавляем количество токенов для сбора
+    const tokenAmount = document.createElement('span');
+    tokenAmount.id = 'token-amount';
+    tokenAmount.textContent = `+${calculateMiningReward(120)} Purr`;
+    miningButton.appendChild(tokenAmount);
+}
+
+// Функция для сбора токенов
 function claimTokens() {
     if (Date.now() >= miningEndTime) {
         const baseReward = 120;
@@ -274,7 +223,9 @@ function claimTokens() {
         // Обновляем интерфейс
         miningText.textContent = "Mining";
         miningButton.classList.remove('disabled');
-        miningButton.onclick = startMining;
+        miningButton.onclick = function() {
+            startMining();
+        };
 
         // Удаляем элемент с количеством токенов
         const tokenAmount = document.getElementById('token-amount');
@@ -282,6 +233,11 @@ function claimTokens() {
             tokenAmount.remove();
         }
     }
+}
+
+// Функция для расчета награды за майнинг
+function calculateMiningReward(baseReward) {
+    return baseReward * (1 + miningEfficiency / 100);
 }
 
 // ================== ПРИВЕТСТВЕННАЯ КАРТОЧКА ==================
@@ -352,6 +308,7 @@ function showMarketSection(section) {
 
     if (section === 'upgrades') {
         updateUpgradeButton();
+        updateMiningSpeedUpgradeButton();
     }
 }
 
@@ -824,3 +781,6 @@ document.getElementById('mining-button').addEventListener('click', startMining);
 document.getElementById('get-card-button').addEventListener('click', getWelcomeCard);
 document.getElementById('toggle-boxes').addEventListener('click', () => showMarketSection('boxes'));
 document.getElementById('toggle-upgrades').addEventListener('click', () => showMarketSection('upgrades'));
+
+// Загрузка прогресса при запуске приложения
+loadProgress();
