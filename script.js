@@ -140,88 +140,7 @@ function saveProgress() {
     });
 }
 
-// Функция для показа кнопки "Claim"
-function showClaimButton() {
-    miningText.textContent = "Claim";
-    miningTimer.classList.add('hidden');
-    miningTimer.textContent = "";
-    miningButton.classList.remove('disabled');
-
-    // Удаляем старый обработчик, если он есть
-    miningButton.onclick = null;
-
-    // Привязываем кнопку к функции claimTokens
-    miningButton.onclick = function() {
-        claimTokens();
-    };
-
-    // Добавляем количество токенов для сбора
-    const tokenAmount = document.createElement('span');
-    tokenAmount.id = 'token-amount';
-    tokenAmount.textContent = `+${calculateMiningReward(120)} Purr`;
-    miningButton.appendChild(tokenAmount);
-}
-
-// Функция для сбора токенов
-function claimTokens() {
-    if (Date.now() >= miningEndTime) {
-        const baseReward = 120;
-        const totalReward = calculateMiningReward(baseReward);
-        animateTokenIncrement(totalReward);
-
-        totalMinedPurr += totalReward;
-        updateProfileStatistics();
-
-        // Сбрасываем состояние майнинга
-        miningActive = false;
-        miningEndTime = 0;
-        saveProgress(); // Сохраняем прогресс
-
-        // Обновляем интерфейс
-        miningText.textContent = "Mining";
-        miningButton.classList.remove('disabled');
-        miningButton.onclick = function() {
-            startMining();
-        };
-
-        // Удаляем элемент с количеством токенов
-        const tokenAmount = document.getElementById('token-amount');
-        if (tokenAmount) {
-            tokenAmount.remove();
-        }
-    }
-}
-
-// Функция для запуска майнинга
-function startMining() {
-    if (!miningActive) {
-        miningActive = true;
-        miningEndTime = Date.now() + 10 * 1000; // 10 секунд для теста (замените на 4 часа: 4 * 60 * 60 * 1000)
-        saveProgress(); // Сохраняем состояние майнинга
-
-        miningButton.classList.add('disabled');
-        miningText.textContent = "Mining...";
-        miningTimer.classList.remove('hidden');
-        miningButton.onclick = null;
-
-        startMiningTimer(10 * 1000); // 10 секунд для теста
-    }
-}
-
-// Функция для запуска таймера майнинга
-function startMiningTimer(duration) {
-    const timer = setInterval(() => {
-        const timeLeft = miningEndTime - Date.now();
-        if (timeLeft <= 0) {
-            clearInterval(timer);
-            showClaimButton();
-        } else {
-            const seconds = Math.floor(timeLeft / 1000);
-            miningTimer.textContent = `${seconds}s`;
-        }
-    }, 1000);
-}
-
+// Функция для загрузки данных из облачного хранилища
 // Функция для загрузки прогресса
 function loadProgress() {
     Telegram.WebApp.CloudStorage.getItem('userProgress', function(error, value) {
@@ -255,8 +174,115 @@ function loadProgress() {
     });
 }
 
+// Функция для показа кнопки "Claim"
+// Функция для показа кнопки "Claim"
+function showClaimButton() {
+    miningText.textContent = "Claim";
+    miningTimer.classList.add('hidden');
+    miningTimer.textContent = "";
+    miningButton.classList.remove('disabled');
+
+    // Удаляем старый обработчик, если он есть
+    miningButton.onclick = null;
+
+    // Привязываем кнопку к функции claimTokens
+    miningButton.onclick = claimTokens;
+
+    // Добавляем количество токенов для сбора
+    const tokenAmount = document.createElement('span');
+    tokenAmount.id = 'token-amount';
+    tokenAmount.textContent = `+${calculateMiningReward(120)} Purr`;
+    miningButton.appendChild(tokenAmount);
+}
+
+
+// Обновление интерфейса после загрузки данных
+function updateUI() {
+    tokenDisplay.textContent = tokens.toString();
+    updateCardsList();
+    updateProfileStatistics();
+
+    // Обновляем кнопку майнинга
+    if (miningActive) {
+        miningButton.classList.add('disabled');
+        miningText.textContent = "Mining...";
+        miningTimer.classList.remove('hidden');
+        miningButton.onclick = null;
+    } else {
+        miningText.textContent = "Mining";
+        miningButton.classList.remove('disabled');
+        miningButton.onclick = startMining;
+    }
+
+    // Обновляем кнопку получения карточки
+    const getCardButton = document.getElementById('get-card-button');
+    if (hasWelcomeCard) {
+        getCardButton.classList.add('hidden');
+    } else {
+        getCardButton.classList.remove('hidden');
+    }
+}
+
 // Загрузка прогресса при запуске приложения
 loadProgress();
+
+// ================== МАЙНИНГ НА 4 ЧАСА ==================
+
+// Функция для запуска майнинга
+function startMining() {
+    if (!miningActive) {
+        miningActive = true;
+        miningEndTime = Date.now() + 10 * 1000; // 10 секунд для теста (замените на 4 часа: 4 * 60 * 60 * 1000)
+        saveProgress(); // Сохраняем состояние майнинга
+
+        miningButton.classList.add('disabled');
+        miningText.textContent = "Mining...";
+        miningTimer.classList.remove('hidden');
+        miningButton.onclick = null;
+
+        startMiningTimer(10 * 1000); // 10 секунд для теста
+    }
+}
+
+function startMiningTimer(duration) {
+    const timer = setInterval(() => {
+        const timeLeft = miningEndTime - Date.now();
+        if (timeLeft <= 0) {
+            clearInterval(timer);
+            showClaimButton();
+        } else {
+            const seconds = Math.floor(timeLeft / 1000);
+            miningTimer.textContent = `${seconds}s`;
+        }
+    }, 1000);
+}
+
+function claimTokens() {
+    if (Date.now() >= miningEndTime) {
+        const baseReward = 120;
+        const totalReward = calculateMiningReward(baseReward);
+        animateTokenIncrement(totalReward);
+
+        totalMinedPurr += totalReward;
+        updateProfileStatistics();
+
+        // Сбрасываем состояние майнинга
+        miningActive = false;
+        miningEndTime = 0;
+        saveProgress(); // Сохраняем прогресс
+
+        // Обновляем интерфейс
+        miningText.textContent = "Mining";
+        miningButton.classList.remove('disabled');
+        miningButton.onclick = startMining;
+
+        // Удаляем элемент с количеством токенов
+        const tokenAmount = document.getElementById('token-amount');
+        if (tokenAmount) {
+            tokenAmount.remove();
+        }
+    }
+}
 
 // ================== ПРИВЕТСТВЕННАЯ КАРТОЧКА ==================
 
